@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance Dashboard</title>
+    <link rel="stylesheet" href="{% static 'FacultyView/Index_Style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }
+
+        .stat-card.present {
+            border-left-color: #28a745;
+        }
+
+        .stat-card.absent {
+            border-left-color: #dc3545;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .branch-stats {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .branch-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .branch-table th,
+        .branch-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .branch-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .percentage-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .percentage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+
+        .dashboard-nav {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .dashboard-nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.3s;
+        }
+
+        .dashboard-nav a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>QR Attendance Dashboard</h1>
+        <h2>Real-time Attendance Monitoring</h2>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="dashboard-nav">
+            <a href="{% url 'dashboard_home' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="{% url 'attendance_report' %}"><i class="fas fa-chart-bar"></i> Detailed Report</a>
+            <a href="/"><i class="fas fa-qrcode"></i> Faculty View</a>
+            <a href="{% url 'student_add_manually' %}"><i class="fas fa-user-plus"></i> Student Portal</a>
+        </div>
+
+        <div class="refresh-info">
+            <i class="fas fa-sync-alt"></i> Dashboard updates automatically • Last updated: {{ current_time|date:"H:i:s" }}
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users" style="font-size: 2em; color: #007bff;"></i>
+                <div class="stat-number">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+
+            <div class="stat-card present">
+                <i class="fas fa-check-circle" style="font-size: 2em; color: #28a745;"></i>
+                <div class="stat-number">{{ present_count }}</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+
+            <div class="stat-card absent">
+                <i class="fas fa-times-circle" style="font-size: 2em; color: #dc3545;"></i>
+                <div class="stat-number">{{ absent_count }}</div>
+                <div class="stat-label">Absent Today</div>
+            </div>
+
+            <div class="stat-card">
+                <i class="fas fa-percentage" style="font-size: 2em; color: #ffc107;"></i>
+                <div class="stat-number">{{ attendance_percentage }}%</div>
+                <div class="stat-label">Attendance Rate</div>
+            </div>
+        </div>
+
+        <div class="branch-stats">
+            <h3><i class="fas fa-building"></i> Attendance by Branch</h3>
+            <table class="branch-table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Total Students</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Attendance %</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for branch in branch_stats %}
+                    <tr>
+                        <td><strong>{{ branch.name }}</strong></td>
+                        <td>{{ branch.total }}</td>
+                        <td style="color: #28a745;">{{ branch.present }}</td>
+                        <td style="color: #dc3545;">{{ branch.absent }}</td>
+                        <td><strong>{{ branch.percentage }}%</strong></td>
+                        <td>
+                            <div class="percentage-bar">
+                                <div class="percentage-fill" style="width: {{ branch.percentage }}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if present_students %}
+        <div class="branch-stats">
+            <h3><i class="fas fa-list-check"></i> Present Students (Roll Numbers)</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                {% for roll in present_students %}
+                <span style="background: #28a745; color: white; padding: 8px 12px; border-radius: 20px; font-weight: bold;">
+                    {{ roll }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        <p>&copy; QR Attendance System 2023 - Team Hokage | Dashboard</p>
+    </footer>
+</body>
+</html>

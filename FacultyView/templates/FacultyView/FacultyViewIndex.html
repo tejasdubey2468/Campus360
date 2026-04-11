@@ -3,6 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="3" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QR Attendance System</title>
     <link rel="stylesheet" href="{% static 'FacultyView/Index_Style.css' %}" />
@@ -13,26 +14,32 @@
   </head>
   <body>
     <header>
-      <h1>Inderprastha Engineering College</h1>
+      <h1>Shree LR Tiwari College </h1>
       <h2>Attendance Portal</h2>
     </header>
     <main>
       <div class="marked-list">
         <h2>Present Count : {{ students|length }}</h2>
         <h3 class="present-list">Present Students</h3>
+        <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Page refreshes automatically every 3 seconds</p>
 
         <form class="attendance-form" method="POST">
           <ul class="student-list">
-            {% csrf_token %} {% for student in students %}
+            {% csrf_token %}
+            {% for student in students %}
             <li class="student">
               <label class="student-label">
                 <span class="student-name">
-                  {{student.s_roll}} - {{ student.s_fname }} {{student.s_lname}}
+                  {% if not student.manual %}
+                    {{ student.roll }} - {{ student.name }}
+                  {% else %}
+                    {{ student.roll }} (manual)
+                  {% endif %}
                 </span>
                 <button
                   type="submit"
                   name="student_id"
-                  value="{{student.s_roll}}"
+                  value="{{ student.roll }}"
                   class="delete-button"
                 >
                   <i class="fas fa-trash-alt"></i>
@@ -42,7 +49,7 @@
             {% endfor %}
           </ul>
         </form>
-        <a href="{% url 'add_manually' %}"><button>+ Add Manually</button></a>
+        <a href="{% url 'student_add_manually' %}"><button>+ Add Manually</button></a>
         <a href="/"><button>✔ Submit</button></a>
       </div>
       <div class="attendance-container">
@@ -50,22 +57,18 @@
           <h2>
             Connect to College Wi-Fi and Scan the QR Code to Mark Attendance
           </h2>
-          {% comment %}
-          <a href="{% url 'add_manually' %}">
-            {% endcomment %}
-            <img
-              src="{% static 'FacultyView/qrcode.png' %}"
-              alt="QR Code"
-              width="200"
-              height="200"
-            />
-          </a>
+          <img
+            src="{% static 'FacultyView/qrcode.png' %}"
+            alt="QR Code"
+            width="200"
+            height="200"
+          />
           <p class="hint">Please scan the QR code to mark your attendance.</p>
         </div>
       </div>
     </main>
     <footer>
-      <p>&copy; QR Attendance System 2023 - Team Hokage</p>
+      <p> QR Attendance System  </p>
     </footer>
   </body>
 </html>
