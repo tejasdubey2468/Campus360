@@ -1,0 +1,206 @@
+<!-- scheduler/templates/scheduler/dashboard.html -->
+{% extends 'scheduler/base.html' %}
+
+{% block title %}Dashboard - Timetable Generator{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Classes</h5>
+                <h2>{{ total_classes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Teachers</h5>
+                <h2>{{ total_teachers }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Subjects</h5>
+                <h2>{{ total_subjects }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Classrooms</h5>
+                <h2>{{ total_classrooms }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Timetable Form -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Generate New Timetable</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Timetable Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.academic_year.id_for_label }}" class="form-label">Academic Year</label>
+                    {{ form.academic_year }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.semester.id_for_label }}" class="form-label">Semester</label>
+                    {{ form.semester }}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Select Classes to Include (optional)</label>
+                <div class="row">
+                    {% for class in form.selected_classes %}
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            {{ class }}
+                            <label class="form-check-label" for="{{ class.id_for_label }}">
+                                {{ class.choice_label }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small class="form-text text-muted">Leave unchecked to include all classes with subject assignments</small>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Generate Timetable</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if generated_timetable %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Generated Timetable</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <h5>{{ generated_timetable.name }}</h5>
+            <p class="text-muted">{{ generated_timetable.academic_year }} - {{ generated_timetable.semester }}</p>
+        </div>
+        <div class="mb-3">
+            <a href="{% url 'timetable_detail' generated_timetable.pk %}" class="btn btn-outline-primary">Open Full Timetable</a>
+        </div>
+        {% for class_row in generated_class_rows %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">{{ class_row.class_obj }}</h6>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            {% for day_num, day_name in generated_days %}
+                            <th>{{ day_name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in class_row.rows %}
+                        <tr>
+                            <td>{{ row.time.0|time:"H:i" }} - {{ row.time.1|time:"H:i" }}</td>
+                            {% for cell in row.cells %}
+                            <td>
+                                {% if cell.slot %}
+                                    {% if cell.entry %}
+                                    <strong>{{ cell.entry.subject_assignment.subject.code }}</strong><br>
+                                    <small>{{ cell.entry.subject_assignment.teacher.name }}</small><br>
+                                    <small class="text-muted">{{ cell.entry.classroom.name }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Free</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Timetable -->
+{% if active_timetable %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Active Timetable</h5>
+    </div>
+    <div class="card-body">
+        <h5>{{ active_timetable.name }}</h5>
+        <p class="text-muted">{{ active_timetable.academic_year }} - {{ active_timetable.semester }}</p>
+        <a href="{% url 'timetable_detail' active_timetable.pk %}" class="btn btn-primary">View Timetable</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Timetables -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Recent Timetables</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_timetables %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Academic Year</th>
+                    <th>Semester</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tt in recent_timetables %}
+                <tr>
+                    <td>{{ tt.name }}</td>
+                    <td>{{ tt.academic_year }}</td>
+                    <td>{{ tt.semester }}</td>
+                    <td>{{ tt.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        {% if tt.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'timetable_detail' tt.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No timetables generated yet. Use the form above to generate your first timetable.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

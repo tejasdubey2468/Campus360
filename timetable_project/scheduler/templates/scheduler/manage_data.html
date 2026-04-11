@@ -1,0 +1,666 @@
+{% extends 'scheduler/base.html' %}
+
+{% block title %}Data Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                <i class="bi bi-database"></i> Data Management Dashboard
+            </h2>
+
+            <!-- Action Buttons -->
+            <div class="mb-4">
+                <a href="{% url 'generate_timetable_dashboard' %}" class="btn btn-success btn-lg">
+                    <i class="bi bi-lightning-charge"></i> Generate Timetable
+                </a>
+                <a href="{% url 'view_timetable_dashboard' %}" class="btn btn-info btn-lg">
+                    <i class="bi bi-calendar-check"></i> View Timetables
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill fs-1 mb-2"></i>
+                    <h5 class="card-title">Classes</h5>
+                    <h2 class="mb-0">{{ total_classes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-badge fs-1 mb-2"></i>
+                    <h5 class="card-title">Teachers</h5>
+                    <h2 class="mb-0">{{ total_teachers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-book fs-1 mb-2"></i>
+                    <h5 class="card-title">Subjects</h5>
+                    <h2 class="mb-0">{{ total_subjects }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-building fs-1 mb-2"></i>
+                    <h5 class="card-title">Classrooms</h5>
+                    <h2 class="mb-0">{{ total_classrooms }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Start Guide -->
+    <div class="alert alert-info mb-4">
+        <h5><i class="bi bi-info-circle"></i> Getting Started - Follow These Steps:</h5>
+        <ol class="mb-0">
+            <li><strong>Add Departments</strong> - Create academic departments (e.g., Computer Science, Mathematics)</li>
+            <li><strong>Add Teachers</strong> - Add faculty members and assign them to departments</li>
+            <li><strong>Add Subjects</strong> - Create course subjects with lab components if needed</li>
+            <li><strong>Add Classrooms</strong> - Set up lecture halls, seminar rooms, and laboratories</li>
+            <li><strong>Add Classes</strong> - Create student classes (e.g., CS 3rd Year A, Math 2nd Year B)</li>
+            <li><strong>Assign Subjects</strong> - Link subjects to classes with specific teachers and lecture counts</li>
+            <li><strong>Generate Timetable</strong> - Use the advanced constraint system to create optimal schedules</li>
+        </ol>
+    </div>
+
+
+    <div class="accordion" id="dataAccordion">
+        <!-- Departments Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="departmentsHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#departmentsCollapse" aria-expanded="true" aria-controls="departmentsCollapse">
+                    <i class="bi bi-building"></i> 1. DEPARTMENTS - Manage Academic Departments
+                </button>
+            </h2>
+            <div id="departmentsCollapse" class="accordion-collapse collapse show" aria-labelledby="departmentsHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Add New Department</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="department">
+                                        <div class="mb-3">
+                                            <label for="{{ department_form.name.id_for_label }}" class="form-label">Department Name</label>
+                                            {{ department_form.name }}
+                                            {% if department_form.name.errors %}
+                                                <div class="text-danger small">{{ department_form.name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ department_form.code.id_for_label }}" class="form-label">Department Code</label>
+                                            {{ department_form.code }}
+                                            {% if department_form.code.errors %}
+                                                <div class="text-danger small">{{ department_form.code.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Add Department</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Existing Departments</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if departments %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Code</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for dept in departments %}
+                                                    <tr>
+                                                        <td>{{ dept.name }}</td>
+                                                        <td>{{ dept.code }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No departments added yet. Add your first department above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teachers Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="teachersHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#teachersCollapse" aria-expanded="true" aria-controls="teachersCollapse">
+                    <i class="bi bi-person-badge"></i> 2. TEACHERS - Add Faculty Members
+                </button>
+            </h2>
+            <div id="teachersCollapse" class="accordion-collapse collapse show" aria-labelledby="teachersHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">Add New Teacher</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="teacher">
+                                        <div class="mb-3">
+                                            <label for="{{ teacher_form.name.id_for_label }}" class="form-label">Teacher Name</label>
+                                            {{ teacher_form.name }}
+                                            {% if teacher_form.name.errors %}
+                                                <div class="text-danger small">{{ teacher_form.name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ teacher_form.email.id_for_label }}" class="form-label">Email</label>
+                                            {{ teacher_form.email }}
+                                            {% if teacher_form.email.errors %}
+                                                <div class="text-danger small">{{ teacher_form.email.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ teacher_form.department.id_for_label }}" class="form-label">Department</label>
+                                            {{ teacher_form.department }}
+                                            {% if teacher_form.department.errors %}
+                                                <div class="text-danger small">{{ teacher_form.department.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-success">Add Teacher</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">Existing Teachers</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if teachers %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Email</th>
+                                                        <th>Department</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for teacher in teachers %}
+                                                    <tr>
+                                                        <td>{{ teacher.name }}</td>
+                                                        <td>{{ teacher.email }}</td>
+                                                        <td>{{ teacher.department.name }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No teachers added yet. Add your first teacher above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="subjectsHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#subjectsCollapse" aria-expanded="true" aria-controls="subjectsCollapse">
+                    <i class="bi bi-book"></i> 3. SUBJECTS - Create Courses & Lab Components
+                </button>
+            </h2>
+            <div id="subjectsCollapse" class="accordion-collapse collapse show" aria-labelledby="subjectsHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Add New Subject</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="subject">
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.name.id_for_label }}" class="form-label">Subject Name</label>
+                                            {{ subject_form.name }}
+                                            {% if subject_form.name.errors %}
+                                                <div class="text-danger small">{{ subject_form.name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.code.id_for_label }}" class="form-label">Subject Code</label>
+                                            {{ subject_form.code }}
+                                            {% if subject_form.code.errors %}
+                                                <div class="text-danger small">{{ subject_form.code.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.subject_type.id_for_label }}" class="form-label">Subject Type</label>
+                                            {{ subject_form.subject_type }}
+                                            {% if subject_form.subject_type.errors %}
+                                                <div class="text-danger small">{{ subject_form.subject_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.credits.id_for_label }}" class="form-label">Credits</label>
+                                            {{ subject_form.credits }}
+                                            {% if subject_form.credits.errors %}
+                                                <div class="text-danger small">{{ subject_form.credits.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.hours_per_week.id_for_label }}" class="form-label">Hours per Week</label>
+                                            {{ subject_form.hours_per_week }}
+                                            {% if subject_form.hours_per_week.errors %}
+                                                <div class="text-danger small">{{ subject_form.hours_per_week.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_form.lectures_per_week.id_for_label }}" class="form-label">Lectures per Week</label>
+                                            {{ subject_form.lectures_per_week }}
+                                            {% if subject_form.lectures_per_week.errors %}
+                                                <div class="text-danger small">{{ subject_form.lectures_per_week.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            {{ subject_form.has_lab_component }}
+                                            <label for="{{ subject_form.has_lab_component.id_for_label }}" class="form-check-label">
+                                                Has Lab Component
+                                            </label>
+                                            {% if subject_form.has_lab_component.errors %}
+                                                <div class="text-danger small">{{ subject_form.has_lab_component.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-info">Add Subject</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Existing Subjects</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if subjects %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Code</th>
+                                                        <th>Type</th>
+                                                        <th>Credits</th>
+                                                        <th>Lab</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for subject in subjects %}
+                                                    <tr>
+                                                        <td>{{ subject.name }}</td>
+                                                        <td>{{ subject.code }}</td>
+                                                        <td>{{ subject.subject_type }}</td>
+                                                        <td>{{ subject.credits }}</td>
+                                                        <td>
+                                                            {% if subject.has_lab_component %}
+                                                                <span class="badge bg-success">Yes</span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary">No</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No subjects added yet. Add your first subject above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classrooms Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="classroomsHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#classroomsCollapse" aria-expanded="true" aria-controls="classroomsCollapse">
+                    <i class="bi bi-building"></i> 4. CLASSROOMS - Add Rooms (Lecture/Lab/Seminar)
+                </button>
+            </h2>
+            <div id="classroomsCollapse" class="accordion-collapse collapse show" aria-labelledby="classroomsHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-warning text-white">
+                                    <h5 class="mb-0">Add New Classroom</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="classroom">
+                                        <div class="mb-3">
+                                            <label for="{{ classroom_form.name.id_for_label }}" class="form-label">Room Name</label>
+                                            {{ classroom_form.name }}
+                                            {% if classroom_form.name.errors %}
+                                                <div class="text-danger small">{{ classroom_form.name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ classroom_form.room_type.id_for_label }}" class="form-label">Room Type</label>
+                                            {{ classroom_form.room_type }}
+                                            {% if classroom_form.room_type.errors %}
+                                                <div class="text-danger small">{{ classroom_form.room_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ classroom_form.capacity.id_for_label }}" class="form-label">Capacity</label>
+                                            {{ classroom_form.capacity }}
+                                            {% if classroom_form.capacity.errors %}
+                                                <div class="text-danger small">{{ classroom_form.capacity.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ classroom_form.building.id_for_label }}" class="form-label">Building</label>
+                                            {{ classroom_form.building }}
+                                            {% if classroom_form.building.errors %}
+                                                <div class="text-danger small">{{ classroom_form.building.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ classroom_form.floor.id_for_label }}" class="form-label">Floor</label>
+                                            {{ classroom_form.floor }}
+                                            {% if classroom_form.floor.errors %}
+                                                <div class="text-danger small">{{ classroom_form.floor.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-warning">Add Classroom</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-warning text-white">
+                                    <h5 class="mb-0">Existing Classrooms</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if classrooms %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Type</th>
+                                                        <th>Capacity</th>
+                                                        <th>Building</th>
+                                                        <th>Floor</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for room in classrooms %}
+                                                    <tr>
+                                                        <td>{{ room.name }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{{ room.room_type|lower }}">{{ room.room_type|title }}</span>
+                                                        </td>
+                                                        <td>{{ room.capacity }}</td>
+                                                        <td>{{ room.building }}</td>
+                                                        <td>{{ room.floor }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No classrooms added yet. Add your first classroom above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="classesHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#classesCollapse" aria-expanded="true" aria-controls="classesCollapse">
+                    <i class="bi bi-people-fill"></i> 5. CLASSES - Create Student Classes
+                </button>
+            </h2>
+            <div id="classesCollapse" class="accordion-collapse collapse show" aria-labelledby="classesHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Add New Class</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="class">
+                                        <div class="mb-3">
+                                            <label for="{{ class_form.name.id_for_label }}" class="form-label">Class Name</label>
+                                            {{ class_form.name }}
+                                            {% if class_form.name.errors %}
+                                                <div class="text-danger small">{{ class_form.name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ class_form.department.id_for_label }}" class="form-label">Department</label>
+                                            {{ class_form.department }}
+                                            {% if class_form.department.errors %}
+                                                <div class="text-danger small">{{ class_form.department.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ class_form.year.id_for_label }}" class="form-label">Year</label>
+                                            {{ class_form.year }}
+                                            {% if class_form.year.errors %}
+                                                <div class="text-danger small">{{ class_form.year.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ class_form.section.id_for_label }}" class="form-label">Section</label>
+                                            {{ class_form.section }}
+                                            {% if class_form.section.errors %}
+                                                <div class="text-danger small">{{ class_form.section.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ class_form.strength.id_for_label }}" class="form-label">Strength</label>
+                                            {{ class_form.strength }}
+                                            {% if class_form.strength.errors %}
+                                                <div class="text-danger small">{{ class_form.strength.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Add Class</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Existing Classes</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if classes %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Department</th>
+                                                        <th>Year</th>
+                                                        <th>Section</th>
+                                                        <th>Strength</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for class in classes %}
+                                                    <tr>
+                                                        <td>{{ class.name }}</td>
+                                                        <td>{{ class.department.name }}</td>
+                                                        <td>{{ class.year }}</td>
+                                                        <td>{{ class.section }}</td>
+                                                        <td>{{ class.strength }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No classes added yet. Add your first class above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Assignments Section -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="assignmentsHeading">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#assignmentsCollapse" aria-expanded="true" aria-controls="assignmentsCollapse">
+                    <i class="bi bi-link"></i> 6. SUBJECT ASSIGNMENTS - Link Subjects to Classes
+                </button>
+            </h2>
+            <div id="assignmentsCollapse" class="accordion-collapse collapse show" aria-labelledby="assignmentsHeading" data-bs-parent="#dataAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0">Assign Subject to Class</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="subject_assignment">
+                                        <div class="mb-3">
+                                            <label for="{{ subject_assignment_form.subject.id_for_label }}" class="form-label">Subject</label>
+                                            {{ subject_assignment_form.subject }}
+                                            {% if subject_assignment_form.subject.errors %}
+                                                <div class="text-danger small">{{ subject_assignment_form.subject.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_assignment_form.student_class.id_for_label }}" class="form-label">Class</label>
+                                            {{ subject_assignment_form.student_class }}
+                                            {% if subject_assignment_form.student_class.errors %}
+                                                <div class="text-danger small">{{ subject_assignment_form.student_class.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_assignment_form.teacher.id_for_label }}" class="form-label">Teacher</label>
+                                            {{ subject_assignment_form.teacher }}
+                                            {% if subject_assignment_form.teacher.errors %}
+                                                <div class="text-danger small">{{ subject_assignment_form.teacher.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="{{ subject_assignment_form.lectures_per_week.id_for_label }}" class="form-label">Lectures per Week</label>
+                                            {{ subject_assignment_form.lectures_per_week }}
+                                            {% if subject_assignment_form.lectures_per_week.errors %}
+                                                <div class="text-danger small">{{ subject_assignment_form.lectures_per_week.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <button type="submit" class="btn btn-secondary">Assign Subject</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0">Subject Assignments</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if subject_assignments %}
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Subject</th>
+                                                        <th>Class</th>
+                                                        <th>Teacher</th>
+                                                        <th>Lectures/Week</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for assignment in subject_assignments %}
+                                                    <tr>
+                                                        <td>{{ assignment.subject.name }}</td>
+                                                        <td>{{ assignment.student_class.name }}</td>
+                                                        <td>{{ assignment.teacher.name }}</td>
+                                                        <td>{{ assignment.lectures_per_week }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No subject assignments yet. Assign subjects to classes above.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

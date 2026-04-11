@@ -1,0 +1,198 @@
+<!-- scheduler/templates/scheduler/view_timetables.html -->
+{% extends 'scheduler/base.html' %}
+
+{% block title %}View Timetables{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timetable-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .timetable-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .timetable-card.active {
+        border-left: 5px solid #28a745;
+        background-color: #f0fff4;
+    }
+    .badge-active {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .timetable-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .info-item {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    .info-item label {
+        display: block;
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 3px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .info-item value {
+        display: block;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    .btn-group-custom {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .empty-state .icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    .stat-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .stat-box.alt1 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .stat-box h3 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    .stat-box p {
+        margin: 5px 0 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="col-md-10 ms-md-auto p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-calendar-check"></i> View Generated Timetables
+        </h2>
+        <a href="{% url 'generate_timetable_dashboard' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Generate New Timetable
+        </a>
+    </div>
+
+    {% if timetables %}
+        <!-- Statistics -->
+        <div class="stats-overview mb-4">
+            <div class="stat-box">
+                <h3>{{ timetables|length }}</h3>
+                <p>Total Generated</p>
+            </div>
+            <div class="stat-box alt1">
+                <h3>{{ timetables|dictsort:"is_active"|last|default:"—" }}</h3>
+                <p>Currently Active</p>
+            </div>
+        </div>
+
+        <!-- Timetables List -->
+        <div class="row">
+            {% for timetable in timetables %}
+                <div class="col-md-6 mb-4">
+                    <div class="card timetable-card {% if timetable.is_active %}active{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ timetable.name }}</h5>
+                            {% if timetable.is_active %}
+                                <span class="badge-active">
+                                    <i class="bi bi-check-circle-fill"></i> Active
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <div class="timetable-info">
+                                <div class="info-item">
+                                    <label>Academic Year</label>
+                                    <value>{{ timetable.academic_year }}</value>
+                                </div>
+                                <div class="info-item">
+                                    <label>Semester</label>
+                                    <value>{{ timetable.semester }}</value>
+                                </div>
+                                <div class="info-item">
+                                    <label>Created</label>
+                                    <value>{{ timetable.created_at|date:"M d, Y" }}</value>
+                                </div>
+                                <div class="info-item">
+                                    <label>Entries</label>
+                                    <value>{{ timetable.entries.count }}</value>
+                                </div>
+                            </div>
+
+                            <!-- Constraints Info -->
+                            <div style="background-color: #f0f7ff; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem;">
+                                <strong style="color: #0066cc;">Constraints:</strong>
+                                <ul style="margin: 5px 0 0; padding-left: 20px; list-style: none;">
+                                    <li>Max Lectures: {{ timetable.max_consecutive_lectures }}</li>
+                                    <li>Max Labs/Day: {{ timetable.max_labs_per_day }}</li>
+                                </ul>
+                            </div>
+
+                            <div class="btn-group-custom">
+                                <a href="{% url 'view_timetable' timetable.pk %}" class="btn btn-primary btn-sm flex-grow-1">
+                                    <i class="bi bi-eye"></i> View Full Schedule
+                                </a>
+                                {% if not timetable.is_active %}
+                                    <form method="POST" action="{% url 'activate_timetable' timetable.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                            <i class="bi bi-check-lg"></i> Activate
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <a href="{% url 'api_timetable_data' timetable.pk %}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-download"></i> Export JSON
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="icon">📋</div>
+            <h4>No Timetables Generated Yet</h4>
+            <p class="text-muted">You haven't generated any timetables. Start by setting up your data and creating a new timetable.</p>
+            <a href="{% url 'manage_data' %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-gear"></i> Setup Data
+            </a>
+            <a href="{% url 'generate_timetable_dashboard' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Generate Timetable
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

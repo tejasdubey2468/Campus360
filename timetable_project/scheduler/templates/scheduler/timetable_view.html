@@ -1,0 +1,91 @@
+<!-- scheduler/templates/scheduler/timetable_view.html -->
+{% extends 'scheduler/base.html' %}
+
+{% block title %}{{ timetable.name }} - Timetable{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>{{ timetable.name }}</h2>
+        <p class="text-muted mb-0">{{ timetable.academic_year }} - {{ timetable.semester }}</p>
+    </div>
+    <div>
+        {% if not timetable.is_active %}
+        <form method="post" action="{% url 'activate_timetable' timetable.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Set as Active</button>
+        </form>
+        {% else %}
+        <span class="badge bg-success fs-6">Active Timetable</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Class Selector -->
+<div class="mb-4">
+    <label for="classSelect" class="form-label">Select Class:</label>
+    <select id="classSelect" class="form-select w-auto" onchange="filterByClass(this.value)">
+        <option value="all">All Classes</option>
+        {% for cls in classes %}
+        <option value="{{ cls.id }}">{{ cls }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Timetable Grid -->
+{% for schedule in class_schedules %}
+<div class="card mb-4 class-timetable" data-class-id="{{ schedule.student_class.id }}">
+    <div class="card-header">
+        <h5 class="mb-0">{{ schedule.student_class }}</h5>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Time</th>
+                    {% for day_num, day_name in days %}
+                    <th>{{ day_name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in schedule.rows %}
+                <tr>
+                    <td class="fw-bold">
+                        {{ row.start_time|time:"H:i" }} - {{ row.end_time|time:"H:i" }}
+                    </td>
+                    {% for cell in row.cells %}
+                    {% if cell %}
+                    <td class="timetable-cell">
+                        <strong>{{ cell.subject_assignment.subject.code }}</strong><br>
+                        <small>{{ cell.subject_assignment.teacher.name }}</small><br>
+                        <small class="text-muted">{{ cell.classroom.name }}</small>
+                    </td>
+                    {% else %}
+                    <td class="timetable-cell empty-slot"></td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByClass(classId) {
+    const tables = document.querySelectorAll('.class-timetable');
+    tables.forEach(table => {
+        if (classId === 'all' || table.dataset.classId === classId) {
+            table.style.display = 'block';
+        } else {
+            table.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

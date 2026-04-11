@@ -1,0 +1,374 @@
+{% extends 'scheduler/base.html' %}
+
+{% block title %}Generate Timetable{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    .form-section h5 {
+        color: #343a40;
+        font-weight: 600;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+    }
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+    }
+    .checkbox-item input[type="checkbox"] {
+        margin-right: 8px;
+        cursor: pointer;
+    }
+    .checkbox-item label {
+        margin: 0;
+        cursor: pointer;
+        flex-grow: 1;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .stats-card.alt1 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .stats-card.alt2 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .stats-card.alt3 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    .stats-card h3 {
+        margin: 10px 0 5px;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .stats-card p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .constraints-info {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+    .constraints-info h6 {
+        color: #1565c0;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .constraints-info ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+    .constraints-info li {
+        margin-bottom: 5px;
+        font-size: 0.95rem;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px 40px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+    }
+    .btn-submit:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="col-md-10 ms-md-auto p-4">
+    <h2 class="mb-4">
+        <i class="bi bi-calendar-check"></i> Generate Timetable
+    </h2>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stats-card">
+                <h3>{{ total_classes }}</h3>
+                <p>Classes Available</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card alt1">
+                <h3>{{ total_subjects }}</h3>
+                <p>Subject Assignments</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card alt2">
+                <h3>{{ total_time_slots }}</h3>
+                <p>Time Slots</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card alt3">
+                <h3>{{ lecture_classrooms }}</h3>
+                <p>Classrooms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Constraints Info -->
+    <div class="constraints-info">
+        <h6><i class="bi bi-info-circle"></i> Comprehensive Constraint System</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Time Structure (T-01 to T-06)</h6>
+                <ul class="small">
+                    <li>1-hour lectures, 2-hour labs, configurable breaks</li>
+                    <li>Break inserted at specified position</li>
+                    <li>Early finish on low-lab days</li>
+                    <li>No gaps between consecutive lectures</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">Lab Constraints (L-01 to L-07)</h6>
+                <ul class="small">
+                    <li>Max 1 lab per day per class</li>
+                    <li>Max 1 lab per subject per week</li>
+                    <li>Labs ≤ 5 per week total</li>
+                    <li>Lab rooms only, continuity required</li>
+                    <li>Distributed across week</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-6">
+                <h6 class="text-warning">Room & Personnel (R-01 to R-04, P-01 to P-06)</h6>
+                <ul class="small">
+                    <li>No double booking, type matching</li>
+                    <li>Capacity checks, same-floor preference</li>
+                    <li>No double teaching, blocked slots</li>
+                    <li>Max 3 consecutive hours, workload balance</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-info">Subject & Validation (S-01 to S-05, V-01 to V-05)</h6>
+                <ul class="small">
+                    <li>Exact weekly lecture counts</li>
+                    <li>No same-day repeats, spread across week</li>
+                    <li>Lab ≠ lecture same day</li>
+                    <li>Pre-generation feasibility checks</li>
+                    <li>Backtracking on conflicts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generation Form -->
+    <form method="POST" class="form-timetable-generate">
+        {% csrf_token %}
+
+        <!-- Basic Information -->
+        <div class="form-section">
+            <h5>Timetable Information</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Timetable Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.academic_year.id_for_label }}" class="form-label">Academic Year *</label>
+                    {{ form.academic_year }}
+                    {% if form.academic_year.errors %}
+                        <div class="text-danger small">{{ form.academic_year.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.semester.id_for_label }}" class="form-label">Semester *</label>
+                    {{ form.semester }}
+                    {% if form.semester.errors %}
+                        <div class="text-danger small">{{ form.semester.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Structure Constraints -->
+        <div class="form-section">
+            <h5><i class="bi bi-clock"></i> Time Structure Configuration</h5>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.start_time.id_for_label }}" class="form-label">Start Time *</label>
+                    {{ form.start_time }}
+                    <small class="form-text text-muted">Daily start time</small>
+                    {% if form.start_time.errors %}
+                        <div class="text-danger small">{{ form.start_time.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.lecture_duration.id_for_label }}" class="form-label">Lecture Duration (min) *</label>
+                    {{ form.lecture_duration }}
+                    <small class="form-text text-muted">Duration of each lecture</small>
+                    {% if form.lecture_duration.errors %}
+                        <div class="text-danger small">{{ form.lecture_duration.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.lab_duration.id_for_label }}" class="form-label">Lab Duration (min) *</label>
+                    {{ form.lab_duration }}
+                    <small class="form-text text-muted">Duration of each lab session</small>
+                    {% if form.lab_duration.errors %}
+                        <div class="text-danger small">{{ form.lab_duration.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ form.break_duration.id_for_label }}" class="form-label">Break Duration (min) *</label>
+                    {{ form.break_duration }}
+                    <small class="form-text text-muted">Duration of break period</small>
+                    {% if form.break_duration.errors %}
+                        <div class="text-danger small">{{ form.break_duration.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.break_after_slot.id_for_label }}" class="form-label">Break After Slot *</label>
+                    {{ form.break_after_slot }}
+                    <small class="form-text text-muted">Insert break after this many lectures</small>
+                    {% if form.break_after_slot.errors %}
+                        <div class="text-danger small">{{ form.break_after_slot.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.labs_per_week.id_for_label }}" class="form-label">Labs Per Week *</label>
+                    {{ form.labs_per_week }}
+                    <small class="form-text text-muted">Maximum lab sessions per week</small>
+                    {% if form.labs_per_week.errors %}
+                        <div class="text-danger small">{{ form.labs_per_week.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Personnel & Subject Constraints -->
+        <div class="form-section">
+            <h5><i class="bi bi-person-check"></i> Personnel & Subject Constraints</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.max_consecutive_lectures.id_for_label }}" class="form-label">
+                        Max Consecutive Lectures *
+                    </label>
+                    {{ form.max_consecutive_lectures }}
+                    <small class="form-text text-muted">Lectures before break required</small>
+                    {% if form.max_consecutive_lectures.errors %}
+                        <div class="text-danger small">{{ form.max_consecutive_lectures.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        {{ form.allow_same_subject_consecutive }}
+                        <label for="{{ form.allow_same_subject_consecutive.id_for_label }}" class="form-check-label">
+                            Allow Same Subject Consecutive
+                        </label>
+                        <small class="form-text text-muted d-block">Allow back-to-back lectures of same subject</small>
+                        {% if form.allow_same_subject_consecutive.errors %}
+                            <div class="text-danger small">{{ form.allow_same_subject_consecutive.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes Selection -->
+        <div class="form-section">
+            <h5>
+                <i class="bi bi-people-fill"></i> Select Classes to Schedule *
+            </h5>
+            {{ form.selected_classes.errors }}
+            {{ form.selected_classes }}
+            <small class="form-text text-muted">{{ form.selected_classes.help_text }}</small>
+            {% if form.selected_classes.errors %}
+                <div class="text-danger small mt-2">{{ form.selected_classes.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Classroom Selection -->
+        <div class="form-section">
+            <h5>
+                <i class="bi bi-building"></i> Select Lecture Halls/Seminar Rooms *
+            </h5>
+            {{ form.lecture_classrooms.errors }}
+            {{ form.lecture_classrooms }}
+            <small class="form-text text-muted">{{ form.lecture_classrooms.help_text }}</small>
+            {% if form.lecture_classrooms.errors %}
+                <div class="text-danger small mt-2">{{ form.lecture_classrooms.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Lab Classroom Selection -->
+        <div class="form-section">
+            <h5>
+                <i class="bi bi-flask"></i> Select Laboratory Rooms (Optional)
+            </h5>
+            {{ form.lab_classrooms.errors }}
+            {% if form.lab_classrooms %}
+                {{ form.lab_classrooms }}
+                <small class="form-text text-muted">{{ form.lab_classrooms.help_text }}</small>
+            {% else %}
+                <p class="text-muted">No lab rooms available. Add lab classrooms in Data Management.</p>
+            {% endif %}
+            {% if form.lab_classrooms.errors %}
+                <div class="text-danger small mt-2">{{ form.lab_classrooms.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'manage_data' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Data Management
+            </a>
+            <button type="submit" class="btn btn-submit">
+                <i class="bi bi-lightning-charge"></i> Generate Timetable
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    {% load static %}
+    input[type="text"],
+    input[type="number"],
+    select {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px 12px;
+        width: 100%;
+        font-size: 0.95rem;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+</style>
+{% endblock %}
