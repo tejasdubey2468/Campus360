@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Canteen | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#ea580c",
+            "secondary": "#facc15",
+            "on-surface": "#1e293b",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Notebook Style Styles */
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .food-card {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid #f1f5f9;
+    }
+
+    .food-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px -12px rgba(234, 88, 12, 0.12);
+      border-color: #ea580c;
+    }
+
+    .appetite-gradient {
+      background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+    }
+
+    .price-badge {
+      background: rgba(234, 88, 12, 0.1);
+      color: #ea580c;
+      font-weight: 800;
+    }
+
+    /* Global Interaction Components */
+    #ai-sidebar {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: -40px 0 80px -20px rgba(234, 88, 12, 0.15);
+    }
+
+    #ai-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+  <div class="paper-grain"></div>
+
+  <!-- Sidebar -->
+  <!-- Mobile Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 appetite-gradient rounded-lg flex items-center justify-center text-white shadow-lg">
+          <span class="material-symbols-outlined text-sm">restaurant</span>
+        </div>
+        <h1 class="text-xl font-bold text-slate-900 font-headline">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold">Canteen Service</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="courses.html">
+        <span class="material-symbols-outlined">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="canteen.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="occupancy.html">
+        <span class="material-symbols-outlined">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="lost-found.html">
+        <span class="material-symbols-outlined">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="settings.html">
+        <span class="material-symbols-outlined">settings</span>Settings
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline"
+        href="login.html">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div
+    class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+        <span class="material-symbols-outlined text-sm font-black">school</span>
+      </div>
+      <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+    </div>
+    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+  </div>
+
+  <main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-12 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+    <header class="flex justify-between items-end">
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <span
+            class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full border border-primary/20 leading-none py-1.5">OPEN
+            NOW</span>
+          <span class="text-xs font-bold text-on-surface-variant">• 08:00 AM - 09:00 PM</span>
+        </div>
+        <h1 class="text-5xl font-black font-headline text-on-surface leading-tight">Fresh, Healthy & <br /><span
+            class="text-primary italic">Delicious.</span></h1>
+        <p class="text-on-surface-variant font-medium max-w-sm">From morning brews to midnight snacks, fueling your
+          academic journey one bite at a time.</p>
+      </div>
+      <div class="flex gap-4">
+
+        <button onclick="showToast('Displaying Optimized Chef Specials Cluster...')"
+          class="bg-primary text-white px-8 py-3 rounded-full font-bold shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all">
+          Daily Specials
+        </button>
+      </div>
+    </header>
+
+    <!-- Daily Special Section -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-black font-headline">Today's Specials</h2>
+        <div class="flex gap-4">
+          <button
+            class="p-2 bg-white rounded-full border border-outline-variant hover:bg-slate-50 transition-all shadow-sm">
+            <span class="material-symbols-outlined leading-none">chevron_left</span>
+          </button>
+          <button class="p-2 appetite-gradient text-white rounded-full transition-all shadow-lg">
+            <span class="material-symbols-outlined leading-none">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Food Card 1 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100">
+            <img class="w-full h-full object-cover" src="assets/paneer-tikka.png" alt="Paneer Tikka Platter" />
+            <div class="absolute top-4 left-4">
+              <span
+                class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-primary shadow-sm">RECOMMENDED</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Paneer Tikka Platter</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Classic Indian tandoor specialty</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹180</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">energy_savings_leaf</span>
+                <span class="text-xs font-bold text-on-surface-variant">420 kcal</span>
+              </div>
+              <button onclick="showToast('Paneer Tikka Platter added to digital tray')"
+                class="flex items-center gap-2 text-xs font-black text-primary hover:underline">
+                Quick Add <span class="material-symbols-outlined text-sm">add_circle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Card 2 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100">
+            <img class="w-full h-full object-cover"
+              src="https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?auto=format&fit=crop&q=80&w=600"
+              alt="Spicy Chicken Momos" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-red-600 shadow-sm">CHEF'S CHOICE</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Spicy Chicken Momos</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Steamed momos with fiery red chutney</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹80</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">energy_savings_leaf</span>
+                <span class="text-xs font-bold text-on-surface-variant">320 kcal</span>
+              </div>
+              <button onclick="showToast('Spicy Chicken Momos added to digital tray')"
+                class="flex items-center gap-2 text-xs font-black text-primary hover:underline">
+                Quick Add <span class="material-symbols-outlined text-sm">add_circle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Card 3 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100">
+            <img class="w-full h-full object-cover"
+              src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=600"
+              alt="Garden Fresh Salad" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-green-600 shadow-sm">LOW CALORIE</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Garden Fresh Salad</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Seasonal veggies with lemon dressing</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹60</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">energy_savings_leaf</span>
+                <span class="text-xs font-bold text-on-surface-variant">180 kcal</span>
+              </div>
+              <button onclick="showToast('Garden Fresh Salad added to digital tray')"
+                class="flex items-center gap-2 text-xs font-black text-primary hover:underline">
+                Quick Add <span class="material-symbols-outlined text-sm">add_circle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Card 4 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100">
+            <img class="w-full h-full object-cover" src="assets/chicken-starters.png" alt="Chicken Starters" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-amber-600 shadow-sm">SPICY DELIGHT</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Crispy Chicken Starters</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Fried to perfection with fresh lemon</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹120</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">local_fire_department</span>
+                <span class="text-xs font-bold text-on-surface-variant">450 kcal</span>
+              </div>
+              <button onclick="showToast('Chicken Starters added to digital tray')"
+                class="flex items-center gap-2 text-xs font-black text-primary hover:underline">
+                Quick Add <span class="material-symbols-outlined text-sm">add_circle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food Card 5 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100">
+            <img class="w-full h-full object-cover" src="assets/chinese-food.png" alt="Chinese Hakka Noodles" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-rose-600 shadow-sm">STUDENT FAVORITE</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Hakka Noodles & Manchurian</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Authentic Chinese wok-tossed combo</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹100</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">local_dining</span>
+                <span class="text-xs font-bold text-on-surface-variant">510 kcal</span>
+              </div>
+              <button onclick="showToast('Hakka Noodles added to digital tray')"
+                class="flex items-center gap-2 text-xs font-black text-primary hover:underline">
+                Quick Add <span class="material-symbols-outlined text-sm">add_circle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Menu Tabs -->
+    <section class="space-y-8">
+      <!-- Tab Buttons -->
+      <div class="flex items-end justify-between border-b-2 border-outline-variant">
+        <div class="flex gap-2 overflow-x-auto pb-0" id="menu-tabs">
+          <button onclick="switchMenuTab('classic', this)"
+            class="menu-tab active-tab pb-5 px-6 text-base font-black text-primary border-b-4 border-primary leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span> Classic Menu
+          </button>
+          <button onclick="switchMenuTab('breakfast', this)"
+            class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-[20px]">breakfast_dining</span> Breakfast
+          </button>
+          <button onclick="switchMenuTab('snacks', this)"
+            class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-[20px]">lunch_dining</span> Snacks
+          </button>
+          <button onclick="switchMenuTab('beverages', this)"
+            class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-[20px]">local_cafe</span> Beverages
+          </button>
+        </div>
+        <div class="pb-5">
+          <span id="item-count" class="text-sm font-bold text-on-surface-variant">Showing 2 items</span>
+        </div>
+      </div>
+
+      <!-- Classic Menu Panel -->
+      <div id="panel-classic" class="menu-panel grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+              <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=100" alt="Veggie Bowl" />
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Customizable Veggie Bowl</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Rice / Roti base with sabzi & dal</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹70</p>
+            <button class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+              <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&q=80&w=100" alt="Veg Burger" />
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Veg Aloo Burger</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Crispy aloo tikki with mint chutney</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹55</p>
+            <button onclick="showToast('Veg Aloo Burger added to queue')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Breakfast Panel (hidden by default) -->
+      <div id="panel-breakfast" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">breakfast_dining</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Poha</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Flattened rice with peanuts & lime</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹30</p>
+            <button onclick="showToast('Poha added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">egg_alt</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Bread Omelette</h4>
+              <p class="text-xs text-on-surface-variant font-medium">2 eggs, 2 bread slices, butter</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹40</p>
+            <button onclick="showToast('Bread Omelette added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">restaurant</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Idli Sambar (4 pcs)</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Soft idlis with sambar & coconut chutney</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹35</p>
+            <button onclick="showToast('Idli Sambar added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">nutrition</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Upma</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Semolina with curry leaves & veggies</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹25</p>
+            <button onclick="showToast('Upma added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snacks Panel (hidden by default) -->
+      <div id="panel-snacks" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-amber-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">lunch_dining</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Samosa (2 pcs)</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Crispy fried with tamarind chutney</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹20</p>
+            <button onclick="showToast('Samosa added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-amber-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">local_pizza</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Veg Puff</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Flaky pastry with spiced potato filling</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹25</p>
+            <button onclick="showToast('Veg Puff added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-amber-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">ramen_dining</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Maggi Noodles</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Classic 2-minute noodles, extra masala</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹30</p>
+            <button onclick="showToast('Maggi added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-amber-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">kebab_dining</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Bread Pakoda</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Deep-fried bread with green chutney</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹20</p>
+            <button onclick="showToast('Bread Pakoda added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Beverages Panel (hidden by default) -->
+      <div id="panel-beverages" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-sky-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">local_cafe</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Masala Chai</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Ginger, cardamom & lemongrass tea</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹15</p>
+            <button onclick="showToast('Masala Chai added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-sky-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">coffee</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Cold Coffee</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Blended with milk & vanilla ice cream</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹50</p>
+            <button onclick="showToast('Cold Coffee added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-sky-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">local_drink</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Mango Lassi</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Thick yoghurt with Alphonso mango pulp</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹45</p>
+            <button onclick="showToast('Mango Lassi added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group">
+          <div class="flex items-center gap-5">
+            <div class="w-16 h-16 rounded-xl bg-sky-50 overflow-hidden shrink-0 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">water_drop</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg leading-tight mb-1">Fresh Lime Soda</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Sweet / salt / both — your choice!</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="font-black text-primary text-xl">₹30</p>
+            <button onclick="showToast('Fresh Lime Soda added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ADD+</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Assistant FAB -->
+    <button onclick="toggleAI()"
+      class="fixed bottom-8 right-8 bg-gradient-to-br from-primary to-secondary text-white p-5 rounded-full shadow-2xl flex items-center gap-3 group hover:scale-105 active:scale-95 transition-all duration-300 z-50">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">restaurant_menu</span>
+      <span
+        class="font-headline font-bold text-sm max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">Dining
+        AI</span>
+    </button>
+
+    <!-- AI Sidebar -->
+    <div id="ai-sidebar"
+      class="fixed top-0 right-0 h-screen w-[400px] bg-white z-[60] translate-x-full flex flex-col border-l border-outline-variant">
+      <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 class="text-xl font-black font-headline italic text-primary">Dining AI</h3>
+          <p class="text-[10px] font-black text-on-surface-variant leading-none mt-1">Culinary Guide v3.0</p>
+        </div>
+        <button onclick="toggleAI()"
+          class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all">
+          <span class="material-symbols-outlined text-on-surface-variant">close</span>
+        </button>
+      </div>
+      <div class="flex-1 p-8 overflow-y-auto space-y-6">
+        <div class="p-4 bg-primary/5 rounded-2xl border border-primary/10 text-primary">
+          <p class="text-xs font-medium leading-relaxed italic">"Feeling hungry, Tejas? I see you've had a
+            high-intensity study session. Based on your caloric burn, I recommend the Spicy Chicken Ramen. Plus, you get
+            12% cashback today!"</p>
+        </div>
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-on-surface-variant px-1 italic">Dining Intelligence</p>
+          <button onclick="showToast('Synthesizing Personalized Nutritional Audit...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Nutritional Performance Audit</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">restaurant</span>
+          </button>
+          <button onclick="showToast('Applying 12% VIP Cashback to next transaction...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Redeem VIP Cashback</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">payments</span>
+          </button>
+        </div>
+      </div>
+      <div class="p-8 border-t border-outline-variant">
+        <div class="relative">
+          <input type="text" placeholder="Consult dining logic..."
+            class="w-full pl-4 pr-12 py-4 bg-slate-50 border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-medium italic">
+          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-primary p-2">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast"
+      class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-primary">restaurant</span>
+      <p id="toast-message" class="text-[10px] font-black italic"></p>
+    </div>
+
+  </main>
+
+  <script>
+    const tabItemCounts = { classic: 2, breakfast: 4, snacks: 4, beverages: 4 };
+
+    function switchMenuTab(tab, btn) {
+      // Hide all panels
+      document.querySelectorAll('.menu-panel').forEach(p => p.classList.add('hidden'));
+      // Reset all tab buttons
+      document.querySelectorAll('.menu-tab').forEach(t => {
+        t.classList.remove('text-primary', 'border-primary', 'font-black', 'active-tab');
+        t.classList.add('text-on-surface-variant', 'border-transparent', 'font-bold');
+      });
+      // Show selected panel
+      document.getElementById('panel-' + tab).classList.remove('hidden');
+      // Activate clicked tab
+      btn.classList.add('text-primary', 'border-primary', 'font-black', 'active-tab');
+      btn.classList.remove('text-on-surface-variant', 'border-transparent', 'font-bold');
+      // Update item count
+      document.getElementById('item-count').textContent = 'Showing ' + tabItemCounts[tab] + ' items';
+    }
+
+    function toggleAI() {
+      const sidebar = document.getElementById('ai-sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+
+      setTimeout(() => {
+        toast.classList.remove('toast-active');
+      }, 3000);
+    }
+  </script>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      sidebar.classList.toggle('-translate-x-full');
+      backdrop.classList.toggle('hidden');
+      setTimeout(() => backdrop.classList.toggle('opacity-0'), 10);
+    }
+  </script>
+</body>
+
+</html>

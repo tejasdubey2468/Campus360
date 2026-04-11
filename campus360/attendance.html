@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Attendance Registry | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: #fdf8f0;
+      --surface: #ffffff;
+      --primary: #004ac6;
+      --secondary: #fb923c;
+      --on-surface: #0f172a;
+      --on-surface-variant: #64748b;
+      --outline-variant: #f1f5f9;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      background-image: 
+        linear-gradient(rgba(0, 74, 198, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 74, 198, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: var(--on-surface);
+      min-h-screen: 100vh;
+    }
+
+    .notebook-card {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .notebook-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 40px;
+      width: 2px;
+      height: 100%;
+      background: rgba(239, 68, 68, 0.2);
+    }
+    
+    .status-pill {
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+
+<body class="p-4 md:p-8">
+  <div class="max-w-6xl mx-auto space-y-8">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="space-y-1">
+        <a href="faculty-dashboard.html" class="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline mb-2">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Timetable
+        </a>
+        <h1 class="text-4xl font-black font-headline italic tracking-tight text-on-surface">Attendance Registry</h1>
+        <p class="text-on-surface-variant font-bold text-sm">Lecture: <span id="display-subject" class="text-primary italic">Advanced Mathematics</span> • <span id="display-date">Tuesday, Apr 09, 2026</span></p>
+      </div>
+      
+      <div class="flex gap-4">
+        <button onclick="window.print()" class="px-6 py-3 bg-white border border-outline-variant text-on-surface rounded-2xl font-black text-xs hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
+           <span class="material-symbols-outlined text-sm">download</span> Download PDF
+        </button>
+        <button class="px-6 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2">
+           <span class="material-symbols-outlined text-sm">share</span> Share Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="notebook-card rounded-[2.5rem] p-8">
+         <div class="flex items-center gap-4">
+            <div class="p-4 bg-primary/5 text-primary rounded-2xl">
+               <span class="material-symbols-outlined text-2xl">group</span>
+            </div>
+            <div>
+               <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Total Students</p>
+               <h3 class="text-3xl font-black italic">45</h3>
+            </div>
+         </div>
+      </div>
+      <div class="notebook-card rounded-[2.5rem] p-8 border-l-4 border-l-success">
+         <div class="flex items-center gap-4">
+            <div class="p-4 bg-success/5 text-success rounded-2xl">
+               <span class="material-symbols-outlined text-2xl">check_circle</span>
+            </div>
+            <div>
+               <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Present</p>
+               <h3 id="stat-present" class="text-3xl font-black italic text-success">42</h3>
+            </div>
+         </div>
+      </div>
+      <div class="notebook-card rounded-[2.5rem] p-8 border-l-4 border-l-error">
+         <div class="flex items-center gap-4">
+            <div class="p-4 bg-error/5 text-error rounded-2xl">
+               <span class="material-symbols-outlined text-2xl">person_off</span>
+            </div>
+            <div>
+               <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Absent</p>
+               <h3 id="stat-absent" class="text-3xl font-black italic text-error">03</h3>
+            </div>
+         </div>
+      </div>
+    </div>
+
+    <!-- Registry Table -->
+    <div class="notebook-card rounded-[3rem] p-1">
+       <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-outline-variant">
+                <th class="px-10 py-6 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Student Name</th>
+                <th class="px-6 py-6 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Roll No</th>
+                <th class="px-6 py-6 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Branch</th>
+                <th class="px-6 py-6 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Check-in Time</th>
+                <th class="px-10 py-6 text-right text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-body" class="divide-y divide-outline-variant/30">
+               <!-- Rows populated by attendance.js -->
+            </tbody>
+          </table>
+       </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * Attendance Registry Logic
+     * Campus 360 - Smart Campus Management System
+     */
+
+    const mockAttendanceData = [
+        { name: "Aarav Sharma", roll: "CS2101", branch: "CS-A", time: "09:02 AM", status: "PRESENT" },
+        { name: "Vihaan Gupta", roll: "CS2102", branch: "CS-A", time: "09:05 AM", status: "PRESENT" },
+        { name: "Ananya Iyer", roll: "CS2103", branch: "CS-A", time: "09:07 AM", status: "PRESENT" },
+        { name: "Ishani Deshmukh", roll: "CS2104", branch: "CS-A", time: "09:10 AM", status: "PRESENT" },
+        { name: "Arjun Malhotra", roll: "CS2105", branch: "CS-A", time: "09:12 AM", status: "PRESENT" },
+        { name: "Sanya Verma", roll: "CS2106", branch: "CS-A", time: "09:15 AM", status: "PRESENT" },
+        { name: "Kabir Singh", roll: "CS2107", branch: "CS-A", time: "---", status: "ABSENT" },
+        { name: "Myra Kapoor", roll: "CS2108", branch: "CS-A", time: "09:18 AM", status: "PRESENT" },
+        { name: "Advait Joshi", roll: "CS2109", branch: "CS-A", time: "09:20 AM", status: "PRESENT" },
+        { name: "Kiara Reddy", roll: "CS2110", branch: "CS-A", time: "---", status: "ABSENT" }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Pick up lecture details from URL params if available (Django integration ready)
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('subject')) {
+            document.getElementById('display-subject').innerText = params.get('subject');
+        }
+        if (params.has('date')) {
+            document.getElementById('display-date').innerText = params.get('date');
+        }
+
+        populateAttendanceTable();
+        updateStats();
+    });
+
+    function populateAttendanceTable() {
+        const tbody = document.getElementById('attendance-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = mockAttendanceData.map(student => `
+            <tr class="hover:bg-slate-50/50 transition-colors group">
+                <td class="px-10 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-on-surface-variant group-hover:bg-primary group-hover:text-white transition-all">
+                            ${student.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <span class="font-bold text-sm text-on-surface">${student.name}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-5 text-xs font-black text-on-surface-variant italic">${student.roll}</td>
+                <td class="px-6 py-5 text-xs font-bold text-on-surface-variant">${student.branch}</td>
+                <td class="px-6 py-5 text-xs font-bold text-primary italic">${student.time}</td>
+                <td class="px-10 py-5 text-right">
+                    <span class="status-pill \${student.status === 'PRESENT' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}">
+                        \${student.status}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateStats() {
+        const presentCount = mockAttendanceData.filter(h => h.status === 'PRESENT').length;
+        const absentCount = mockAttendanceData.length - presentCount;
+
+        document.getElementById('stat-present').innerText = presentCount.toString().padStart(2, '0');
+        document.getElementById('stat-absent').innerText = absentCount.toString().padStart(2, '0');
+    }
+  </script>
+</body>
+
+</html>

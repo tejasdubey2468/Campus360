@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Admin Dashboard | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  
+  <!-- Supabase Library & Config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    // 🛡️ Global Auth Guard
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      return session.user;
+    }
+  </script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#004ac6",
+            "secondary": "#fb923c",
+            "success": "#22c55e",
+            "warning": "#eab308",
+            "error": "#ef4444",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .hover-lift {
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-8px);
+    }
+
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .marker-highlight {
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+    }
+
+    .marker-highlight::after {
+      content: '';
+      position: absolute;
+      left: -5%;
+      bottom: -2px;
+      width: 110%;
+      height: 12px;
+      background: rgba(37, 99, 235, 0.15);
+      z-index: -1;
+      transform: skewX(-15deg) rotate(-1deg);
+      border-radius: 4px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+
+    /* Custom Table Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(8px);
+    }
+
+    .sidebar-link-active {
+      background: #004ac6;
+      color: white;
+      box-shadow: 0 10px 15px -3px rgba(0, 74, 198, 0.2);
+    }
+    
+    /* Time Table Styles Inherited */
+    .class-block {
+      border-radius: 20px;
+      padding: 1rem;
+      border-left: 6px solid;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .class-block:hover {
+      filter: brightness(0.95);
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+  <div class="paper-grain"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
+        </div>
+        <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold">Admin Command Center</p>
+    </div>
+    
+    <nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2">
+      <a href="#" onclick="switchSection('dashboard')" class="nav-link dashboard flex items-center gap-3 px-4 py-3 rounded-full font-bold transition-all text-sm font-headline sidebar-link-active">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>Dashboard
+      </a>
+      <a href="#" onclick="switchSection('students')" class="nav-link students flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline">
+        <span class="material-symbols-outlined">group</span>Student Management
+      </a>
+      <a href="#" onclick="switchSection('faculty')" class="nav-link faculty flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline">
+        <span class="material-symbols-outlined">supervisor_account</span>Faculty Management
+      </a>
+      <a href="#" onclick="switchSection('fees')" class="nav-link fees flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline">
+        <span class="material-symbols-outlined">payments</span>Fees Management
+      </a>
+      <a href="#" onclick="switchSection('salary')" class="nav-link salary flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline">
+        <span class="material-symbols-outlined">account_balance_wallet</span>Salary Management
+      </a>
+      <a href="#" onclick="switchSection('timetable')" class="nav-link timetable flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+    </nav>
+    
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a id="logout-link" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+
+    <script>
+      // 🛡️ Global Auth Guard
+      async function checkAuth() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = 'login.html';
+          return;
+        }
+        return session.user;
+      }
+
+      document.getElementById('logout-link').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+      });
+
+      // 🔄 Initialize Admin Dashboard
+      async function initializeAdminDashboard() {
+        const user = await checkAuth();
+        if (!user) return;
+
+        try {
+          const { data, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id);
+
+          if (profileError) throw profileError;
+          
+          if (!data || data.length === 0) {
+            console.warn("No admin profile found for user:", user.id);
+            alert("Admin profile not found.");
+            return;
+          }
+
+          const profile = data[0];
+          if (profile.full_name) {
+            document.querySelector('.text-xs.font-black.text-slate-900.font-headline').textContent = profile.full_name;
+          }
+        } catch (error) {
+          console.error("Admin Init Error:", error.message);
+        }
+      }
+
+      // 📋 Section Switching Logic
+      function switchSection(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('section').forEach(section => {
+          section.classList.add('hidden');
+        });
+
+        // Show target section
+        const targetSection = document.getElementById(`section-${sectionId}`);
+        if (targetSection) {
+          targetSection.classList.remove('hidden');
+        }
+
+        // Update Sidebar Active State
+        document.querySelectorAll('.nav-link').forEach(link => {
+          link.classList.remove('sidebar-link-active', 'bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+          link.classList.add('text-on-surface-variant', 'hover:bg-slate-50');
+        });
+
+        const activeLink = document.querySelector(`.nav-link.${sectionId}`);
+        if (activeLink) {
+          activeLink.classList.add('sidebar-link-active', 'bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+          activeLink.classList.remove('text-on-surface-variant', 'hover:bg-slate-50');
+        }
+
+        // Update Page Title
+        const titles = {
+          'dashboard': 'Overview & Metrics',
+          'students': 'Student Management',
+          'faculty': 'Faculty Management',
+          'fees': 'Fees & Revenue',
+          'salary': 'Payroll Management',
+          'timetable': 'System Schedule'
+        };
+        document.getElementById('section-title').textContent = titles[sectionId] || 'Admin Portal';
+
+        // Close sidebar on mobile after selection
+        if (window.innerWidth < 1024) toggleSidebar();
+      }
+
+      // 📱 Mobile Sidebar Toggler
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('-translate-x-full');
+      }
+
+      // 🪟 Modal Toggler
+      function toggleModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.toggle('hidden');
+          modal.classList.toggle('flex');
+        }
+      }
+
+      // 🍞 Notification Toast
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-message');
+        if (toast && toastMsg) {
+          toastMsg.textContent = message;
+          toast.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+          setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+          }, 3000);
+        }
+      }
+
+      // 📅 Timetable Day Switcher
+      function switchDay(day) {
+        // Hide all day schedules
+        document.querySelectorAll('.day-schedule').forEach(s => s.classList.add('hidden'));
+        
+        // Show target day
+        const target = document.getElementById(`schedule-${day}`);
+        if (target) target.classList.remove('hidden');
+
+        // Update Day Buttons
+        document.querySelectorAll('.day-btn').forEach(btn => {
+          btn.classList.remove('bg-primary', 'text-white');
+          btn.classList.add('hover:bg-slate-50', 'text-on-surface-variant');
+        });
+
+        const activeBtn = document.getElementById(`btn-${day}`);
+        if (activeBtn) {
+          activeBtn.classList.add('bg-primary', 'text-white');
+          activeBtn.classList.remove('hover:bg-slate-50', 'text-on-surface-variant');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', initializeAdminDashboard);
+    </script>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+        <span class="material-symbols-outlined text-sm font-black">admin_panel_settings</span>
+      </div>
+      <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+    </div>
+    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-10 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+    
+    <!-- Top Navbar -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white/20 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/30 gap-4">
+      <div class="relative group">
+        <h1 class="text-3xl md:text-5xl font-black font-headline text-on-surface leading-tight">
+          Admin <span class="text-primary marker-highlight">Portal</span>
+        </h1>
+        <p id="section-title" class="text-on-surface-variant font-bold mt-2 flex items-center gap-2">
+           Overview & Metrics
+        </p>
+      </div>
+
+      <div class="flex items-center gap-4 w-full md:w-auto">
+        <div class="relative flex-1 md:w-64">
+          <input type="text" placeholder="Global Search..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-outline-variant rounded-full text-sm focus:ring-primary focus:border-primary transition-all">
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-sm">search</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="w-10 h-10 rounded-full bg-white border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-slate-50 transition-all relative">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+          </button>
+          <div class="flex items-center gap-3 pl-2 border-l border-outline-variant ml-2">
+            <div class="text-right hidden sm:block">
+              <p class="text-[10px] font-black text-on-surface-variant leading-none">SYSTEM ADMIN</p>
+              <p class="text-xs font-black text-slate-900 font-headline">Dr. Harrison</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border-2 border-white shadow-sm">
+              <span class="material-symbols-outlined text-sm">person</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sections Container -->
+    <div id="sections-container">
+      
+      <!-- Dashboard Section -->
+      <section id="section-dashboard" class="space-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+              <div class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined">group</span>
+              </div>
+              <span class="text-[10px] font-black text-success">+12%</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Total Students</p>
+              <h3 class="text-3xl font-black font-headline text-slate-900 italic">2,142</h3>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+              <div class="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary">
+                <span class="material-symbols-outlined">school</span>
+              </div>
+              <span class="text-[10px] font-black text-success">+2 Staff</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Active Faculty</p>
+              <h3 class="text-3xl font-black font-headline text-slate-900 italic">124</h3>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+              <div class="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center text-success">
+                <span class="material-symbols-outlined">payments</span>
+              </div>
+              <span class="text-[10px] font-black text-warning">88% Paid</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Total Revenue</p>
+              <h3 class="text-3xl font-black font-headline text-slate-900 italic">₹12.4 Cr</h3>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex flex-col justify-between h-48">
+            <div class="flex justify-between items-start">
+              <div class="w-12 h-12 bg-error/10 rounded-2xl flex items-center justify-center text-error">
+                <span class="material-symbols-outlined">warning</span>
+              </div>
+              <span class="text-[10px] font-black text-error">12 Alerts</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Defaulters</p>
+              <h3 class="text-3xl font-black font-headline text-slate-900 italic">48</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm space-y-6">
+            <h3 class="text-xl font-black font-headline italic">Recent Applications</h3>
+            <div class="space-y-4">
+              <div class="flex items-center gap-4 p-4 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-outline-variant">
+                <img src="assets/default_student_avatar.png" class="w-10 h-10 rounded-full" alt="Student">
+                <div class="flex-1">
+                  <p class="text-sm font-black text-slate-900">Ananya Sharma</p>
+                  <p class="text-[10px] text-on-surface-variant font-bold">B.Tech CS • 2nd Year</p>
+                </div>
+                <span class="px-3 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">PENDING</span>
+              </div>
+              <div class="flex items-center gap-4 p-4 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-outline-variant">
+                <img src="assets/default_student_avatar.png" class="w-10 h-10 rounded-full" alt="Student">
+                <div class="flex-1">
+                  <p class="text-sm font-black text-slate-900">Rohan Malhotra</p>
+                  <p class="text-[10px] text-on-surface-variant font-bold">MBA • Year 1</p>
+                </div>
+                <span class="px-3 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">APPROVED</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm space-y-6">
+            <h3 class="text-xl font-black font-headline italic">System Health</h3>
+            <div class="space-y-6">
+              <div class="space-y-2">
+                <div class="flex justify-between text-[10px] font-black uppercase">
+                  <span>Server Load</span>
+                  <span class="text-primary">42%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-primary" style="width: 42%"></div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between text-[10px] font-black uppercase">
+                  <span>Storage Utilization</span>
+                  <span class="text-secondary">78%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-secondary" style="width: 78%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Placeholder sections will be implemented next -->
+      <!-- Student Management Section -->
+      <section id="section-students" class="hidden space-y-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="flex flex-wrap gap-4 w-full md:w-auto">
+            <div class="relative flex-1 md:w-64">
+              <input type="text" placeholder="Search by name or ID..." class="w-full pl-10 pr-4 py-3 bg-white border border-outline-variant rounded-2xl text-sm focus:ring-primary focus:border-primary transition-all">
+              <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-sm">search</span>
+            </div>
+            <select class="px-4 py-3 bg-white border border-outline-variant rounded-2xl text-xs font-bold text-on-surface-variant focus:ring-primary focus:border-primary">
+              <option>All Departments</option>
+              <option>Computer Science</option>
+              <option>Mechanical</option>
+              <option>Electronics</option>
+            </select>
+            <select class="px-4 py-3 bg-white border border-outline-variant rounded-2xl text-xs font-bold text-on-surface-variant focus:ring-primary focus:border-primary">
+              <option>All Semesters</option>
+              <option>Semester 1</option>
+              <option>Semester 4</option>
+              <option>Semester 8</option>
+            </select>
+          </div>
+          <button onclick="toggleModal('modal-add-student')" class="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-95 active:scale-90 transition-transform flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">add</span> Add Student
+          </button>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] border border-outline-variant shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 border-b border-outline-variant">
+                <tr>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">ID</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Name</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Dept/Sem</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Email/Phone</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-center">Attendance</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-center">Fee Status</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant">
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">CS-2024-042</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Tejas Dubey</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Computer Science</p>
+                    <p class="text-[10px] text-on-surface-variant">Sem 4 • Year 2</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">tejas.d@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 98765 43210</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">93.3%</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">PAID</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">CS-2024-045</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Aman Gupta</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Computer Science</p>
+                    <p class="text-[10px] text-on-surface-variant">Sem 4 • Year 2</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">aman.g@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 91234 56789</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">72.5%</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-error/10 text-error text-[10px] font-black rounded-full italic">PENDING</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">ME-2024-012</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Priya Sharma</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Mechanical Eng</p>
+                    <p class="text-[10px] text-on-surface-variant">Sem 2 • Year 1</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">priya.s@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 99887 76655</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">88.2%</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">PAID</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">EC-2024-009</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Rahul Verma</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Electronics Eng</p>
+                    <p class="text-[10px] text-on-surface-variant">Sem 6 • Year 3</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">rahul.v@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 91122 33445</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">64.5%</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-error/10 text-error text-[10px] font-black rounded-full italic">DUE</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="px-6 py-4 bg-slate-50 border-t border-outline-variant flex justify-between items-center text-[10px] font-black text-on-surface-variant italic">
+            <span>Showing 2 of 2,142 Students</span>
+            <div class="flex gap-2">
+              <button class="px-3 py-1 bg-white border border-outline-variant rounded-md hover:bg-slate-100 disabled:opacity-50" disabled>PREV</button>
+              <button class="px-3 py-1 bg-white border border-outline-variant rounded-md hover:bg-slate-100">NEXT</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Faculty Management Section -->
+      <section id="section-faculty" class="hidden space-y-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="flex flex-wrap gap-4 w-full md:w-auto">
+            <div class="relative flex-1 md:w-64">
+              <input type="text" placeholder="Search faculty name or ID..." class="w-full pl-10 pr-4 py-3 bg-white border border-outline-variant rounded-2xl text-sm focus:ring-primary focus:border-primary transition-all">
+              <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-sm">search</span>
+            </div>
+            <select class="px-4 py-3 bg-white border border-outline-variant rounded-2xl text-xs font-bold text-on-surface-variant focus:ring-primary focus:border-primary">
+              <option>All Departments</option>
+              <option>Computer Science</option>
+              <option>Applied Sciences</option>
+            </select>
+          </div>
+          <button onclick="toggleModal('modal-add-faculty')" class="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-95 active:scale-90 transition-transform flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">add</span> Add Faculty
+          </button>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] border border-outline-variant shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 border-b border-outline-variant">
+                <tr>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Faculty ID</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Name</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Dept/Subject</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Contact Info</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-center">Salary Status</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant">
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">FAC-CS-001</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person_4</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Dr. Rajesh Khanna</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Computer Science</p>
+                    <p class="text-[10px] text-on-surface-variant italic">Machine Learning & AI</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">rajesh.k@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 94433 22110</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">PAID</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">FAC-ME-015</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person_4</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Prof. Suniti Verma</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Mechanical Eng</p>
+                    <p class="text-[10px] text-on-surface-variant italic">Thermodynamics</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">suniti.v@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 98877 66554</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">PENDING</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">FAC-EC-008</td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <span class="material-symbols-outlined text-sm">person_4</span>
+                      </div>
+                      <p class="text-sm font-black text-slate-900">Dr. Amit Bhatt</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-xs font-bold text-slate-700">Electronics Eng</p>
+                    <p class="text-[10px] text-on-surface-variant italic">VLSI Design</p>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-[10px] font-bold text-slate-700">amit.b@campus360.edu.in</p>
+                    <p class="text-[10px] text-on-surface-variant">+91 97766 55443</p>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-2 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">PAID</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">edit</span></button>
+                      <button class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-error hover:text-white transition-all"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Fees Management Section -->
+      <section id="section-fees" class="hidden space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center text-success"><span class="material-symbols-outlined">account_balance</span></div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase">Total Collected</p>
+              <h3 class="text-2xl font-black font-headline text-slate-900">₹10.8 Cr</h3>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm flex items-center gap-4 border-l-4 border-l-warning">
+            <div class="w-12 h-12 bg-warning/10 rounded-2xl flex items-center justify-center text-warning"><span class="material-symbols-outlined">pending_actions</span></div>
+            <div>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase">Pending Fees</p>
+              <h3 class="text-2xl font-black font-headline text-slate-900">₹82 Lakhs</h3>
+            </div>
+          </div>
+          <div class="bg-primary p-6 rounded-[2.5rem] shadow-lg shadow-primary/20 text-white flex items-center justify-between group cursor-pointer hover:scale-[1.02] transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white"><span class="material-symbols-outlined">payments</span></div>
+              <div>
+                <p class="text-[10px] font-black text-white/70 uppercase">Razorpay Integration</p>
+                <h3 class="text-lg font-black font-headline leading-tight">Sync Gateway</h3>
+              </div>
+            </div>
+            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] border border-outline-variant shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-outline-variant flex justify-between items-center">
+            <h3 class="text-xl font-black font-headline italic">Student Fee Ledger</h3>
+            <div class="flex gap-2">
+              <button class="px-4 py-2 bg-slate-50 border border-outline-variant rounded-xl text-[10px] font-black italic hover:bg-slate-100">EXPORT CSV</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Student Name</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Roll/Dept</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Total Fee</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Paid/Pending</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-center">Status</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant">
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">Tejas Dubey</td>
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">CS-042 • CS Eng</td>
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">₹85,000</td>
+                  <td class="px-6 py-4 text-[10px] font-bold">
+                    <span class="text-success">₹85,000</span> / <span class="text-slate-400">₹0</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-3 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">COMPLETE</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2">
+                      <button title="Download Receipt" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm">download</span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">Aman Gupta</td>
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">CS-045 • CS Eng</td>
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">₹85,000</td>
+                  <td class="px-6 py-4 text-[10px] font-bold">
+                    <span class="text-success">₹45,000</span> / <span class="text-error">₹40,000</span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-3 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">PARTIAL</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2">
+                      <button title="Send Reminder" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-warning hover:text-white transition-all"><span class="material-symbols-outlined text-sm">notifications_active</span></button>
+                      <button title="Mark as Paid" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-success hover:text-white transition-all"><span class="material-symbols-outlined text-sm">check_circle</span></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Salary Management Section -->
+      <section id="section-salary" class="hidden space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm col-span-1 lg:col-span-2">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-black font-headline italic text-slate-900">Monthly Payroll Stack</h3>
+              <p class="text-[10px] font-black text-on-surface-variant uppercase italic">April 2024</p>
+            </div>
+            <div class="flex items-end gap-10">
+              <div>
+                <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Total Paid</p>
+                <h3 class="text-3xl font-black font-headline text-success italic">₹1.4 Cr</h3>
+              </div>
+              <div class="w-px h-12 bg-slate-100"></div>
+              <div>
+                <p class="text-[10px] font-black text-on-surface-variant uppercase mb-1">Remaining</p>
+                <h3 class="text-3xl font-black font-headline text-error italic">₹12 Lakhs</h3>
+              </div>
+              <button class="ml-auto bg-primary text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-95 transition-transform flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">rocket_launch</span> Bulk Pay
+              </button>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm">
+            <p class="text-[10px] font-black text-on-surface-variant uppercase mb-4 text-center">Payment Status</p>
+            <div class="flex justify-center flex-col items-center gap-3">
+              <div class="relative w-24 h-24">
+                <svg class="w-full h-full transform -rotate-90">
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100" />
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="25.1" class="text-primary" />
+                </svg>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-black">90%</span>
+              </div>
+              <p class="text-[10px] font-black italic text-slate-400">Payroll Finalized</p>
+            </div>
+          </div>
+          <div class="bg-secondary p-6 rounded-[2.5rem] shadow-lg shadow-secondary/20 text-white flex flex-col justify-between">
+            <span class="material-symbols-outlined text-4xl opacity-50">description</span>
+            <div>
+              <p class="text-[10px] font-black text-white/70 uppercase">Tax Statements</p>
+              <h3 class="text-lg font-black font-headline italic">Generate Q1 Reports</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] border border-outline-variant shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Faculty Name</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Department</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Base Salary</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant">Month</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-center">Status</th>
+                  <th class="px-6 py-4 text-[10px] font-black uppercase text-on-surface-variant text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant">
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-6 py-4 flex items-center gap-3">
+                    <img src="assets/default_student_avatar.png" class="w-8 h-8 rounded-full" alt="Faculty">
+                    <p class="text-sm font-black text-slate-900">Dr. Rajesh Khanna</p>
+                  </td>
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">Computer Science</td>
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">₹1,85,000</td>
+                  <td class="px-6 py-4 text-[10px] font-black text-slate-400">APRIL 2024</td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-3 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic">TRANSFERRED</span>
+                  </td>
+                  <td class="px-6 py-4 text-right text-xs font-black italic">
+                    <button class="text-primary hover:underline">Download Slip</button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-6 py-4 flex items-center gap-3">
+                    <img src="assets/default_student_avatar.png" class="w-8 h-8 rounded-full" alt="Faculty">
+                    <p class="text-sm font-black text-slate-900">Prof. Suniti Verma</p>
+                  </td>
+                  <td class="px-6 py-4 text-xs font-bold text-slate-500">Mechanical Eng</td>
+                  <td class="px-6 py-4 font-black text-sm text-slate-900">₹1,52,000</td>
+                  <td class="px-6 py-4 text-[10px] font-black text-slate-400">APRIL 2024</td>
+                  <td class="px-6 py-4 text-center">
+                    <span class="px-3 py-1 bg-warning/10 text-warning text-[10px] font-black rounded-full italic">AWAITING</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <button class="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black italic hover:scale-95 transition-transform">PAY NOW</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Timetable Section -->
+      <section id="section-timetable" class="hidden space-y-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div class="flex gap-2 bg-white p-2 rounded-2xl border border-outline-variant overflow-x-auto no-scrollbar">
+            <button onclick="switchDay('monday')" id="btn-monday" class="day-btn px-6 py-2 bg-primary text-white rounded-xl text-[10px] font-black italic transition-all">Monday</button>
+            <button onclick="switchDay('tuesday')" id="btn-tuesday" class="day-btn px-6 py-2 hover:bg-slate-50 rounded-xl text-[10px] font-black italic text-on-surface-variant transition-all">Tuesday</button>
+            <button onclick="switchDay('wednesday')" id="btn-wednesday" class="day-btn px-6 py-2 hover:bg-slate-50 rounded-xl text-[10px] font-black italic text-on-surface-variant transition-all">Wednesday</button>
+            <button onclick="switchDay('thursday')" id="btn-thursday" class="day-btn px-6 py-2 hover:bg-slate-50 rounded-xl text-[10px] font-black italic text-on-surface-variant transition-all">Thursday</button>
+            <button onclick="switchDay('friday')" id="btn-friday" class="day-btn px-6 py-2 hover:bg-slate-50 rounded-xl text-[10px] font-black italic text-on-surface-variant transition-all">Friday</button>
+          </div>
+          
+          <div class="flex gap-4">
+            <div class="bg-white p-4 rounded-3xl border border-outline-variant shadow-sm flex items-center gap-3">
+              <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><span class="material-symbols-outlined">upload_file</span></div>
+              <div class="pr-2">
+                <p class="text-[8px] font-black text-on-surface-variant uppercase">Bulk Upload</p>
+                <button onclick="toggleModal('modal-upload-timetable')" class="text-xs font-black text-primary hover:underline">Select CSV/PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm relative overflow-hidden">
+          <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-1 border-r border-slate-100 space-y-16 pt-4 hidden sm:block">
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">09:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">10:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">11:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">12:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">01:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">02:00</p>
+              <p class="text-[9px] font-black text-on-surface-variant text-right pr-4">03:00</p>
+            </div>
+            <div id="timetable-canvas" class="col-span-12 sm:col-span-11 space-y-4">
+              <!-- Monday -->
+              <div id="schedule-monday" class="day-schedule space-y-4">
+                <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-pink-500 mb-0.5">LECTURE • 09:00 - 10:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Design Thinking</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 4B • Prof. Vaishnavi</p>
+                  </div>
+                  <span class="material-symbols-outlined text-pink-500">lightbulb</span>
+                </div>
+                <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-emerald-600 mb-0.5">LAB • 10:00 - 11:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Microprocessor 8086</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Main Lab 2 • Prof. Nijina Johnson</p>
+                  </div>
+                  <span class="material-symbols-outlined text-emerald-600">memory</span>
+                </div>
+                <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-blue-600 mb-0.5">LECTURE • 11:00 - 12:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Computer Eng Management</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 2A • Prof. Rajesh Gaikwad</p>
+                  </div>
+                  <span class="material-symbols-outlined text-blue-600">business_center</span>
+                </div>
+                <div class="py-2 bg-slate-50 rounded-full px-6 flex justify-between items-center italic">
+                  <span class="text-[9px] font-black text-on-surface-variant uppercase">Lunch Break • 12:00 - 01:00</span>
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+                </div>
+                <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-indigo-600 mb-0.5">LECTURE • 01:00 - 02:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Discrete Maths</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 3 • Prof. Monica</p>
+                  </div>
+                  <span class="material-symbols-outlined text-indigo-600">functions</span>
+                </div>
+                <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-amber-600 mb-0.5">PRACTICAL • 02:00 - 03:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Idea Lab</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Innovation Hub • Prof. Bhusan Nemade</p>
+                  </div>
+                  <span class="material-symbols-outlined text-amber-600">science</span>
+                </div>
+              </div>
+
+              <!-- Tuesday -->
+              <div id="schedule-tuesday" class="day-schedule hidden space-y-4">
+                <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-indigo-600 mb-0.5">LECTURE • 09:00 - 10:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Discrete Maths</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 3 • Prof. Monica</p>
+                  </div>
+                  <span class="material-symbols-outlined text-indigo-600">functions</span>
+                </div>
+                <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-blue-600 mb-0.5">LECTURE • 10:00 - 11:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Computer Eng Management</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 2A • Prof. Rajesh Gaikwad</p>
+                  </div>
+                  <span class="material-symbols-outlined text-blue-600">business_center</span>
+                </div>
+                <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-amber-600 mb-0.5">PRACTICAL • 11:00 - 12:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Idea Lab</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Innovation Hub • Prof. Bhusan Nemade</p>
+                  </div>
+                  <span class="material-symbols-outlined text-amber-600">science</span>
+                </div>
+                <div class="py-2 bg-slate-50 rounded-full px-6 flex justify-between items-center italic">
+                  <span class="text-[9px] font-black text-on-surface-variant uppercase">Lunch Break • 12:00 - 01:00</span>
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+                </div>
+                <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-emerald-600 mb-0.5">LAB • 01:00 - 02:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Microprocessor 8086</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Main Lab 2 • Prof. Nijina Johnson</p>
+                  </div>
+                  <span class="material-symbols-outlined text-emerald-600">memory</span>
+                </div>
+                <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-pink-500 mb-0.5">LECTURE • 02:00 - 03:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Design Thinking</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 4B • Prof. Vaishnavi</p>
+                  </div>
+                  <span class="material-symbols-outlined text-pink-500">lightbulb</span>
+                </div>
+              </div>
+
+              <!-- Wednesday -->
+              <div id="schedule-wednesday" class="day-schedule hidden space-y-4">
+                <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-blue-600 mb-0.5">LECTURE • 09:00 - 10:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Computer Eng Management</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 2A • Prof. Rajesh Gaikwad</p>
+                  </div>
+                  <span class="material-symbols-outlined text-blue-600">business_center</span>
+                </div>
+                <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-pink-500 mb-0.5">LECTURE • 10:00 - 11:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Design Thinking</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 4B • Prof. Vaishnavi</p>
+                  </div>
+                  <span class="material-symbols-outlined text-pink-500">lightbulb</span>
+                </div>
+                <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-indigo-600 mb-0.5">LECTURE • 11:00 - 12:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Discrete Maths</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 3 • Prof. Monica</p>
+                  </div>
+                  <span class="material-symbols-outlined text-indigo-600">functions</span>
+                </div>
+                <div class="py-2 bg-slate-50 rounded-full px-6 flex justify-between items-center italic">
+                  <span class="text-[9px] font-black text-on-surface-variant uppercase">Lunch Break • 12:00 - 01:00</span>
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+                </div>
+                <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-amber-600 mb-0.5">PRACTICAL • 01:00 - 02:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Idea Lab</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Innovation Hub • Prof. Bhusan Nemade</p>
+                  </div>
+                  <span class="material-symbols-outlined text-amber-600">science</span>
+                </div>
+                <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-emerald-600 mb-0.5">LAB • 02:00 - 03:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Microprocessor 8086</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Main Lab 2 • Prof. Nijina Johnson</p>
+                  </div>
+                  <span class="material-symbols-outlined text-emerald-600">memory</span>
+                </div>
+              </div>
+
+              <!-- Thursday -->
+              <div id="schedule-thursday" class="day-schedule hidden space-y-4">
+                <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-amber-600 mb-0.5">PRACTICAL • 09:00 - 10:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Idea Lab</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Innovation Hub • Prof. Bhusan Nemade</p>
+                  </div>
+                  <span class="material-symbols-outlined text-amber-600">science</span>
+                </div>
+                <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-emerald-600 mb-0.5">LAB • 10:00 - 11:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Microprocessor 8086</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Main Lab 2 • Prof. Nijina Johnson</p>
+                  </div>
+                  <span class="material-symbols-outlined text-emerald-600">memory</span>
+                </div>
+                <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-pink-500 mb-0.5">LECTURE • 11:00 - 12:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Design Thinking</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 4B • Prof. Vaishnavi</p>
+                  </div>
+                  <span class="material-symbols-outlined text-pink-500">lightbulb</span>
+                </div>
+                <div class="py-2 bg-slate-50 rounded-full px-6 flex justify-between items-center italic">
+                  <span class="text-[9px] font-black text-on-surface-variant uppercase">Lunch Break • 12:00 - 01:00</span>
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+                </div>
+                <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-indigo-600 mb-0.5">LECTURE • 01:00 - 02:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Discrete Maths</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 3 • Prof. Monica</p>
+                  </div>
+                  <span class="material-symbols-outlined text-indigo-600">functions</span>
+                </div>
+                <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-blue-600 mb-0.5">LECTURE • 02:00 - 03:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Computer Eng Management</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 2A • Prof. Rajesh Gaikwad</p>
+                  </div>
+                  <span class="material-symbols-outlined text-blue-600">business_center</span>
+                </div>
+              </div>
+
+              <!-- Friday -->
+              <div id="schedule-friday" class="day-schedule hidden space-y-4">
+                <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-emerald-600 mb-0.5">LAB • 09:00 - 10:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Microprocessor 8086</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Main Lab 2 • Prof. Nijina Johnson</p>
+                  </div>
+                  <span class="material-symbols-outlined text-emerald-600">memory</span>
+                </div>
+                <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-pink-500 mb-0.5">LECTURE • 10:00 - 11:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Design Thinking</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 4B • Prof. Vaishnavi</p>
+                  </div>
+                  <span class="material-symbols-outlined text-pink-500">lightbulb</span>
+                </div>
+                <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-blue-600 mb-0.5">LECTURE • 11:00 - 12:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Computer Eng Management</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 2A • Prof. Rajesh Gaikwad</p>
+                  </div>
+                  <span class="material-symbols-outlined text-blue-600">business_center</span>
+                </div>
+                <div class="py-2 bg-slate-50 rounded-full px-6 flex justify-between items-center italic">
+                  <span class="text-[9px] font-black text-on-surface-variant uppercase">Lunch Break • 12:00 - 01:00</span>
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+                </div>
+                <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-amber-600 mb-0.5">PRACTICAL • 01:00 - 02:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Idea Lab</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Innovation Hub • Prof. Bhusan Nemade</p>
+                  </div>
+                  <span class="material-symbols-outlined text-amber-600">science</span>
+                </div>
+                <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm flex justify-between items-center px-6">
+                  <div>
+                    <p class="text-[9px] font-black text-indigo-600 mb-0.5">LECTURE • 02:00 - 03:00</p>
+                    <h3 class="text-sm font-black text-slate-900 font-headline italic">Discrete Maths</h3>
+                    <p class="text-[10px] text-on-surface-variant font-bold">Hall 3 • Prof. Monica</p>
+                  </div>
+                  <span class="material-symbols-outlined text-indigo-600">functions</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+    </div>
+
+  </main>
+
+  <!-- Modals -->
+  <!-- Add Student Modal -->
+  <div id="modal-add-student" class="modal-backdrop fixed inset-0 z-[200] hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 class="text-2xl font-black font-headline italic text-primary leading-none">New Entry: Student</h3>
+          <p class="text-[10px] font-black text-on-surface-variant mt-1 uppercase italic">Database Registration</p>
+        </div>
+        <button onclick="toggleModal('modal-add-student')" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all text-slate-400">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="p-8 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Full Name</label>
+            <input type="text" placeholder="Aman Sharma" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Roll Number</label>
+            <input type="text" placeholder="CS-2024-068" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Department</label>
+            <select class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+              <option>Computer Science</option>
+              <option>Mechanical</option>
+              <option>Electronics</option>
+            </select>
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Semester</label>
+            <select class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+              <option>Sem 1</option>
+              <option>Sem 2</option>
+              <option>Sem 4</option>
+            </select>
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Email</label>
+            <input type="email" placeholder="example@campus.edu" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Phone</label>
+            <input type="tel" placeholder="+91 00000 00000" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+          </div>
+        </div>
+        <div class="flex gap-4 pt-4">
+          <button type="button" onclick="toggleModal('modal-add-student')" class="flex-1 py-4 border border-outline-variant rounded-full text-xs font-black italic hover:bg-slate-50 transition-all">DISCARD</button>
+          <button type="button" onclick="enrollStudent()" class="flex-1 py-4 bg-primary text-white rounded-full text-xs font-black italic shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">CONFIRM ENROLLMENT</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Faculty Modal -->
+  <div id="modal-add-faculty" class="modal-backdrop fixed inset-0 z-[200] hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div class="p-8 border-b border-outline-variant bg-slate-50 flex justify-between items-center">
+        <h3 class="text-2xl font-black font-headline italic text-primary">New Faculty Node</h3>
+        <button onclick="toggleModal('modal-add-faculty')" class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-white"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <form class="p-8 space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Faculty Name</label>
+          <input type="text" placeholder="Dr. Jane Doe" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Subject Expertise</label>
+          <input type="text" placeholder="Quantum Computing" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Salary Grade</label>
+            <input type="number" placeholder="8500" class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Node/Dept</label>
+            <select class="w-full px-4 py-3 bg-slate-50 border border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-bold">
+              <option>Computer Science</option>
+              <option>Humanities</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" onclick="showToast('Faculty Entry Logged Successfully'); toggleModal('modal-add-faculty')" class="w-full py-5 bg-primary text-white rounded-[1.5rem] font-black italic shadow-lg shadow-primary/20 mt-4 hover:scale-[1.02] transition-all">FINALIZE NODE ENTRY</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Upload Timetable Modal -->
+  <div id="modal-upload-timetable" class="modal-backdrop fixed inset-0 z-[200] hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div class="p-8 border-b border-outline-variant text-center bg-slate-50">
+        <h3 class="text-2xl font-black font-headline italic text-primary">Upload Schedule</h3>
+        <p class="text-[10px] font-black text-on-surface-variant uppercase mt-1">Bulk Data Ingestion</p>
+      </div>
+      <div class="p-8 space-y-6">
+        <div class="border-2 border-dashed border-outline-variant rounded-[2rem] p-10 flex flex-col items-center justify-center gap-4 bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer group">
+          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary shadow-sm border border-outline-variant group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-3xl">upload</span>
+          </div>
+          <div class="text-center">
+            <p class="text-sm font-black text-slate-700 italic">Drop CSV/Excel here</p>
+            <p class="text-[10px] font-bold text-on-surface-variant mt-1">or click to browse files</p>
+          </div>
+          <input type="file" class="hidden">
+        </div>
+        <button onclick="showToast('Data Synchronization Complete. Schedule Updated.'); toggleModal('modal-upload-timetable')" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black italic text-xs hover:bg-black transition-all">INCORPORATE INTO SYSTEM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Component -->
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[300] flex items-center gap-3 pointer-events-none">
+    <span class="material-symbols-outlined text-primary">terminal</span>
+    <p id="toast-message" class="text-[10px] font-black italic"></p>
+  </div>
+
+  <script>
+    // Enrollment Functions
+    async function enrollStudent() {
+      const form = document.querySelector('#modal-add-student form');
+      const fullName = form.querySelector('input[placeholder="Aman Sharma"]').value;
+      const rollNumber = form.querySelector('input[placeholder="CS-2024-068"]').value;
+      const department = form.querySelector('select:nth-of-type(1)').value;
+      const semester = form.querySelector('select:nth-of-type(2)').value;
+      const email = form.querySelector('input[type="email"]').value;
+      const phone = form.querySelector('input[type="tel"]').value;
+
+      if (!fullName || !email) {
+        alert('Please fill at least name and email');
+        return;
+      }
+
+      try {
+        showToast('Student Successfully Enrolled!');
+        toggleModal('modal-add-student');
+      } catch (error) {
+        alert('Enrollment failed: ' + error.message);
+      }
+    }
+
+    async function enrollFaculty() {
+      const form = document.querySelector('#modal-add-faculty form');
+      const fullName = form.querySelector('input[placeholder="Dr. Jane Doe"]').value;
+      const expertise = form.querySelector('input[placeholder="Quantum Computing"]').value;
+      const email = form.querySelector('input[placeholder="rajesh.k@campus360.edu.in"]') || {value: ''}; // Need to fix the placeholder in HTML or add email field
+      // I'll add an email field to the faculty form first.
+    }
+
+    // Simulation data logic can be added here if needed
+  </script>
+</body>
+
+</html>

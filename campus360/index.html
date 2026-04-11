@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Campus 360 | Smart Campus Management System</title>
+  <meta name="description"
+    content="Campus 360 — the next-generation smart campus management system for academics, fees, attendance, and learning in one intelligent platform." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "inverse-on-surface": "#eff1f3",
+            "secondary-container": "#acbfff",
+            "surface-tint": "#0053db",
+            "on-secondary-container": "#394c84",
+            "tertiary": "#943700",
+            "on-tertiary-fixed-variant": "#7d2d00",
+            "on-tertiary-fixed": "#360f00",
+            "tertiary-container": "#bc4800",
+            "primary-fixed-dim": "#b4c5ff",
+            "outline": "#737686",
+            "tertiary-fixed": "#ffdbcd",
+            "on-secondary-fixed": "#00174b",
+            "on-primary": "#ffffff",
+            "on-error-container": "#93000a",
+            "on-surface": "#191c1e",
+            "primary-container": "#2563eb",
+            "outline-variant": "#c3c6d7",
+            "surface-container-high": "#e6e8ea",
+            "tertiary-fixed-dim": "#ffb596",
+            "secondary-fixed": "#dbe1ff",
+            "error": "#ba1a1a",
+            "inverse-primary": "#b4c5ff",
+            "primary-fixed": "#dbe1ff",
+            "surface-container-low": "#f2f4f6",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#31447b",
+            "on-error": "#ffffff",
+            "secondary-fixed-dim": "#b4c5ff",
+            "surface-variant": "#e0e3e5",
+            "primary": "#004ac6",
+            "on-primary-fixed": "#00174b",
+            "secondary": "#495c95",
+            "on-background": "#191c1e",
+            "surface-container": "#eceef0",
+            "on-primary-container": "#eeefff",
+            "surface-bright": "#f7f9fb",
+            "on-secondary": "#ffffff",
+            "surface": "#f7f9fb",
+            "on-tertiary-container": "#ffede6",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#003ea8",
+            "inverse-surface": "#2d3133",
+            "on-surface-variant": "#434655",
+            "surface-container-highest": "#e0e3e5",
+            "surface-dim": "#d8dadc",
+            "on-tertiary": "#ffffff"
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "label": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    .headline {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(195, 198, 215, 0.15);
+    }
+
+    .gradient-primary {
+      background: linear-gradient(135deg, #004ac6 0%, #2563eb 100%);
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* Global Interaction Components */
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+
+    /* Notebook Style Styles */
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      /* Enhanced for 'dirt' feel */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .marker-highlight {
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+    }
+
+    .marker-highlight::after {
+      content: '';
+      position: absolute;
+      left: -5%;
+      bottom: -2px;
+      width: 110%;
+      height: 12px;
+      background: rgba(37, 99, 235, 0.15);
+      /* Softened blue highlight */
+      z-index: -1;
+      transform: skewX(-15deg) rotate(-1deg);
+      border-radius: 4px;
+    }
+
+    .sticky-note {
+      background: #fef08a;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+      transform: rotate(-2deg);
+      transition: transform 0.3s ease;
+    }
+
+    .sticky-note:hover {
+      transform: rotate(0deg) scale(1.05);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+
+<body class="text-on-surface">
+  <div class="paper-grain"></div>
+
+  <!-- Top Navigation Bar -->
+  <nav
+    class="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-[0_40px_60px_-15px_rgba(37,99,235,0.04)] px-4 md:px-8 h-20 flex justify-center items-center">
+    <div class="max-w-7xl w-full flex justify-between items-center">
+      <div class="text-xl md:text-2xl font-black text-blue-700 font-headline">Campus 360</div>
+      <div class="hidden md:flex items-center space-x-8 font-headline font-semibold">
+        <a class="text-blue-700 border-b-2 border-blue-600 transition-colors duration-300" href="index.html">Home</a>
+        <a class="text-slate-600 hover:text-blue-700 transition-colors duration-300" href="admin-dashboard.html">Admin
+          Panel</a>
+      </div>
+      <div class="flex items-center gap-6">
+
+        <a href="login.html"
+          class="gradient-primary text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:scale-95 active:scale-90 transition-transform">Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-20">
+    <!-- Hero Section -->
+    <section
+      class="relative min-h-[100dvh] md:min-h-[921px] flex items-center overflow-hidden bg-surface py-20 md:py-0">
+      <div class="max-w-7xl mx-auto px-4 md:px-8 w-full grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12 items-center">
+        <div class="z-10 mt-10 md:mt-0">
+          <span
+            class="inline-block px-4 py-1.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant text-sm font-bold mb-6 font-label">Vibrant
+            Campus Life</span>
+          <h1 class="text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.1] mb-6">
+            Smart Campus <br /><span class="text-primary marker-highlight">Management System</span>
+          </h1>
+          <p class="text-xl text-on-surface-variant mb-10 max-w-lg leading-relaxed font-medium capitalize">
+            Academics, fees, and community—connected in one vibrant space designed for the way you live and learn.
+          </p>
+          <div class="flex flex-wrap gap-4 items-center">
+            <a href="login.html"
+              class="gradient-primary text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:translate-y-[-2px] transition-all">Join
+              the Community</a>
+
+          </div>
+
+          <!-- Re-positioned Sticky Memo -->
+          <div
+            class="hidden xl:flex sticky-note p-5 w-64 mt-12 flex-col gap-2 border border-yellow-200/50 relative z-20">
+            <div
+              class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-12 h-4 bg-white/60 shadow-sm rounded-sm">
+            </div>
+            <div class="flex items-center gap-2 text-yellow-800 text-[10px] font-black italic opacity-70">
+              <span class="material-symbols-outlined text-[13px]">push_pin</span> Campus Alert
+            </div>
+            <p class="text-xs font-black leading-snug text-yellow-900/90 italic">"Don't forget the Football Trials start
+              this Friday at 4 PM! — Student Council"</p>
+          </div>
+        </div>
+        <div class="relative h-[400px] lg:h-[600px] w-full flex items-center justify-center mt-10 lg:mt-0">
+          <div class="absolute w-[120%] h-[120%] bg-primary/5 rounded-full blur-[100px] opacity-30"></div>
+          <img alt="Shree L-R Tiwari College of Engineering Campus"
+            class="relative z-10 w-full h-full object-cover rounded-[40px_20px_40px_20px] md:rounded-[60px_20px_50px_30px] shadow-2xl border-4 border-white"
+            src="https://www.collegebatch.com/static/clg-gallery/shree-lr-tiwari-college-of-engineering-thane-322747.webp" />
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-100 w-full py-12 px-4 md:px-8 border-t border-slate-200/50">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+      <div class="col-span-1 md:col-span-1">
+        <div class="font-headline font-bold text-slate-900 text-xl mb-4">Campus 360</div>
+        <p class="text-sm text-slate-500 leading-relaxed">The ultimate ecosystem for academic excellence and
+          administrative efficiency.</p>
+      </div>
+      <div>
+        <h5 class="font-bold text-slate-900 mb-4">Quick Links</h5>
+        <ul class="space-y-2 text-sm text-slate-500">
+          <li><a class="hover:text-blue-600 transition-colors" href="login.html">Login</a></li>
+          <li><a class="hover:text-blue-600 transition-colors" href="admin-dashboard.html">Admin Dashboard</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="font-bold text-slate-900 mb-4">Support</h5>
+        <ul class="space-y-2 text-sm text-slate-500">
+          <li><a class="hover:text-blue-600 transition-colors"
+              onclick="showToast('Privacy Policy documentation cluster loading...')" href="javascript:void(0)">Privacy
+              Policy</a></li>
+          <li><a class="hover:text-blue-600 transition-colors"
+              onclick="showToast('Terms of Service legal ledger loading...')" href="javascript:void(0)">Terms of
+              Service</a></li>
+          <li><a class="hover:text-blue-600 transition-colors"
+              onclick="showToast('Connecting to Global Support Hub...')" href="javascript:void(0)">Contact Support</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="font-bold text-slate-900 mb-4">Subscribe</h5>
+        <div class="flex gap-2">
+          <input class="bg-white border-none rounded-lg px-4 py-2 text-sm w-full focus:ring-2 focus:ring-blue-500"
+            placeholder="Email" type="email" />
+          <button onclick="showToast('Subscription Synchronized. Welcome to the Ecosystem.')"
+            class="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast"
+      class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-blue-400">offline_bolt</span>
+      <p id="toast-message" class="text-[10px] font-black italic"></p>
+    </div>
+
+    <div class="max-w-7xl mx-auto pt-12 mt-12 border-t border-slate-200/50 text-center">
+      <p class="text-sm text-slate-500">© 2024 Campus 360 University Management System. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+
+      setTimeout(() => {
+        toast.classList.remove('toast-active');
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>

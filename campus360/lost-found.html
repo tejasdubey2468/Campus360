@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Lost & Found | Campus 360</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#fdf8f0",
+              "surface": "#ffffff",
+              "primary": "#8b5cf6",
+              "secondary": "#f43f5e",
+              "on-surface": "#1e293b",
+              "on-surface-variant": "#64748b",
+              "outline-variant": "#f1f5f9"
+            },
+            fontFamily: {
+              "headline": ["Outfit", "sans-serif"],
+              "body": ["Inter", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+    .paper-grain {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    body { 
+      font-family: 'Inter', sans-serif; background-color: #fdf8f0; 
+      background-image: linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px), linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%; background-position: 0 0, 44px 0;
+    }
+    .item-card {
+        background: #ffffff; border-radius: 2rem; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .item-card:hover {
+        transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15); border-color: #8b5cf6;
+    }
+    .toast-active { opacity: 1 !important; transform: translate(-50%, -20px) !important; }
+    .modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px);
+        z-index: 50; align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; letter-spacing: 0.01em; }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+<div class="paper-grain"></div>
+
+<!-- Mobile Backdrop -->
+<div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="mb-10 px-4">
+    <div class="flex items-center gap-2 mb-1">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-lg bg-primary">
+        <span class="material-symbols-outlined text-sm">view_in_ar</span>
+      </div>
+      <h1 class="text-xl font-bold text-slate-900 font-headline">Campus 360</h1>
+    </div>
+    <p class="text-[10px] text-on-surface-variant font-bold">Lost & Found Dept</p>
+  </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="courses.html">
+        <span class="material-symbols-outlined">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="canteen.html">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="occupancy.html">
+        <span class="material-symbols-outlined">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="lost-found.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+  <div class="pt-6 border-t border-outline-variant space-y-1">
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-medium font-headline" href="settings.html">
+      <span class="material-symbols-outlined">settings</span>Settings
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-medium font-headline" href="login.html">
+      <span class="material-symbols-outlined">logout</span>Logout
+    </a>
+  </div>
+</aside>
+
+<!-- Mobile Header -->
+<div class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+  <div class="flex items-center gap-2">
+    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+      <span class="material-symbols-outlined text-sm font-black">school</span>
+    </div>
+    <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+  </div>
+  <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+  </button>
+</div>
+
+<main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-12 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+    <header class="flex justify-between items-end">
+        <div class="space-y-4">
+            <div class="flex items-center gap-2">
+                <span class="px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-black rounded-full border border-primary/20">CAMPUS CENTER</span>
+                <span class="text-xs font-bold text-on-surface-variant">• REPORT & RECOVER</span>
+            </div>
+            <h1 class="text-6xl font-black font-headline text-on-surface leading-tight">Lost & <br/><span class="text-primary italic">Found.</span></h1>
+            <p class="text-on-surface-variant font-medium max-w-md">The unified hub to report missing items or deposit belongings you've found around the campus.</p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Live Sync Active</span>
+            </div>
+        </div>
+        <div class="flex gap-4">
+            <button onclick="openReportModal('LOST')" class="flex items-center gap-2 bg-white px-8 py-4 rounded-3xl border border-outline-variant font-bold text-sm shadow-sm hover:border-primary/50 transition-all">
+                <span class="material-symbols-outlined text-secondary hover:animate-pulse">add_photo_alternate</span>
+                Report Lost Item
+            </button>
+            <button onclick="openReportModal('FOUND')" class="bg-primary text-white px-8 py-4 rounded-3xl font-bold shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined">inventory_2</span>
+                I Found Something
+            </button>
+        </div>
+
+    </header>
+
+    <!-- Search & Filter Bar -->
+    <div class="bg-white/50 backdrop-blur-sm p-4 rounded-3xl border border-outline-variant flex flex-wrap gap-4 items-center shadow-sm">
+        <div class="flex-1 min-w-[200px] relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <input type="text" id="search-input" oninput="filterItems()" placeholder="Search items, descriptions, locations..." class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all">
+        </div>
+        <select id="dept-filter" onchange="filterItems()" class="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:border-primary transition-all cursor-pointer">
+            <option value="">All Departments</option>
+            <option value="CS">Computer Science</option>
+            <option value="ME">Mechanical</option>
+            <option value="EE">Electrical</option>
+            <option value="Law">School of Law</option>
+            <option value="Business">Business</option>
+        </select>
+        <input type="date" id="date-filter" onchange="filterItems()" class="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:border-primary transition-all cursor-pointer">
+        <button onclick="resetFilters()" class="p-3 text-slate-400 hover:text-secondary transition-colors">
+            <span class="material-symbols-outlined">restart_alt</span>
+        </button>
+    </div>
+
+
+    <div class="grid grid-cols-12 gap-8">
+      <!-- Recently Found Highlights -->
+      <section class="col-span-12 lg:col-span-8 space-y-6">
+        <div class="flex justify-between items-end mb-4">
+          <h2 class="text-2xl font-black font-headline text-slate-800">Recently Found</h2>
+          <span class="text-xs font-bold text-primary underline cursor-pointer">View all 12 items</span>
+        </div>
+        <div id="found-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Found items will be injected here -->
+          <div class="col-span-full py-20 text-center text-slate-400 bg-white/30 rounded-[2rem] border border-dashed border-slate-300">
+            <span class="material-symbols-outlined text-4xl mb-2">inventory_2</span>
+            <p class="font-bold">Loading discovered items...</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Active Lost Reports -->
+      <section class="col-span-12 lg:col-span-4 space-y-6">
+        <h2 class="text-2xl font-black font-headline text-slate-800 mb-4">Active Lost Reports</h2>
+        <div id="lost-items-container" class="bg-white rounded-[2rem] border border-outline-variant p-6 space-y-4 shadow-sm">
+          <!-- Lost items will be injected here -->
+          <p class="text-center text-slate-400 py-10 text-xs font-bold">Scanning for reported losses...</p>
+        </div>
+      </section>
+
+    </div>
+
+    <div id="report-modal" class="modal-backdrop px-4">
+      <div class="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 id="modal-title" class="text-2xl font-black font-headline text-slate-800">Report Missing Item</h3>
+            <p class="text-xs font-medium text-slate-500 mt-1">Provide details to help the campus network recover your belonging.</p>
+          </div>
+          <button onclick="toggleModal('report-modal')" class="w-10 h-10 rounded-full hover:bg-white border border-slate-200 flex items-center justify-center transition-all bg-white shadow-sm">
+            <span class="material-symbols-outlined text-slate-500">close</span>
+          </button>
+        </div>
+        <form id="item-form" onsubmit="handleItemSubmit(event)" class="p-8 space-y-4">
+          <input type="hidden" id="item-type" value="LOST">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 mb-1">YOUR NAME</label>
+                <input type="text" name="reporter_name" required placeholder="John Doe" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 mb-1">ROLL NUMBER</label>
+                <input type="text" name="roll_number" required placeholder="23CS001" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 mb-1">DEPARTMENT</label>
+                <input type="text" name="department" required placeholder="Computer Science" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 mb-1">DATE</label>
+                <input type="date" name="date" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">ITEM NAME</label>
+            <input type="text" name="item_name" required placeholder="e.g. Blue Dell Laptop Charger" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">LOCATION LAST SEEN / FOUND</label>
+            <input type="text" name="location" required placeholder="e.g. Auditorium Row 5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">DESCRIPTION</label>
+            <textarea name="description" required placeholder="Provide details like color, scratches, case type..." rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all"></textarea>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">CONTACT NUMBER</label>
+            <input type="text" name="contact" required placeholder="+91 9876543210" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">UPLOAD PICTURE</label>
+            <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+          </div>
+          <button type="submit" class="w-full py-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-violet-600 transition-colors">Submit Report</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Claim Modal -->
+    <div id="claim-modal" class="modal-backdrop px-4">
+      <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden">
+        <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 class="text-2xl font-black font-headline text-slate-800">Claim This Item</h3>
+            <p class="text-xs font-medium text-slate-500 mt-1">Verify your ownership to claim this belonging.</p>
+          </div>
+          <button onclick="toggleModal('claim-modal')" class="w-10 h-10 rounded-full hover:bg-white border border-slate-200 flex items-center justify-center transition-all bg-white shadow-sm">
+            <span class="material-symbols-outlined text-slate-500">close</span>
+          </button>
+        </div>
+        <form id="claim-form" onsubmit="handleClaimSubmit(event)" class="p-8 space-y-4">
+          <input type="hidden" id="claim-item-id">
+          <div>
+              <label class="block text-[10px] font-black text-slate-400 mb-1">YOUR NAME</label>
+              <input type="text" name="claimant_name" required placeholder="John Doe" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+          </div>
+          <div>
+              <label class="block text-[10px] font-black text-slate-400 mb-1">ROLL NUMBER</label>
+              <input type="text" name="roll_number" required placeholder="23CS001" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 mb-1">PROOF/DETAILS</label>
+            <textarea name="details" required placeholder="Explain how this item belongs to you (e.g. lock screen wallpaper, specific mark...)" rows="3" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary text-sm outline-none transition-all"></textarea>
+          </div>
+          <button type="submit" class="w-full py-4 bg-secondary text-white rounded-xl font-bold shadow-lg shadow-secondary/20 hover:bg-rose-600 transition-colors">Submit Claim Request</button>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- Toast Component -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-secondary">campaign</span>
+      <p id="toast-message" class="text-xs font-bold font-headline"></p>
+    </div>
+</main>
+
+<script>
+  // Initial items for first-time use
+  const DEFAULT_ITEMS = [
+    {
+      id: 'mock-1',
+      item_name: 'Blue Dell Laptop Charger',
+      item_type: 'FOUND',
+      location: 'Auditorium Row 5',
+      description: 'Found a 65W Dell charger with some scratches near the plug.',
+      item_date: '2024-04-10',
+      status: 'OPEN',
+      image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?q=80&w=2574&auto=format&fit=crop'
+    },
+    {
+      id: 'mock-2',
+      item_name: 'Water Bottle (HydroFlask)',
+      item_type: 'LOST',
+      location: 'Idea Lab',
+      description: 'Matte black 32oz bottle with a "Campus 360" sticker.',
+      item_date: '2024-04-11',
+      status: 'OPEN',
+      image: 'https://images.unsplash.com/photo-1602143399827-7218ca34703b?q=80&w=2670&auto=format&fit=crop'
+    }
+  ];
+
+  // Initialize data from localStorage
+  let items = JSON.parse(localStorage.getItem('campus_lost_found_items')) || DEFAULT_ITEMS;
+
+  function saveToLocal() {
+    localStorage.setItem('campus_lost_found_items', JSON.stringify(items));
+    renderItems(items);
+  }
+
+  function toggleModal(id) { 
+    const modal = document.getElementById(id);
+    modal.classList.toggle('open');
+    document.body.style.overflow = modal.classList.contains('open') ? 'hidden' : 'auto';
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-message').textContent = message;
+    toast.classList.add('toast-active');
+    setTimeout(() => toast.classList.remove('toast-active'), 3000);
+  }
+
+  function openReportModal(type) {
+    document.getElementById('item-type').value = type;
+    document.getElementById('modal-title').textContent = type === 'LOST' ? 'Report Missing Item' : 'Report Found Item';
+    toggleModal('report-modal');
+  }
+
+  function openClaimModal(itemId) {
+    document.getElementById('claim-item-id').value = itemId;
+    toggleModal('claim-modal');
+  }
+
+  function renderItems(filteredItems = items) {
+    const foundContainer = document.getElementById('found-items-container');
+    const lostContainer = document.getElementById('lost-items-container');
+
+    const foundItems = filteredItems.filter(i => i.item_type === 'FOUND');
+    const lostItems = filteredItems.filter(i => i.item_type === 'LOST');
+
+    foundContainer.innerHTML = foundItems.length ? foundItems.map(item => `
+      <div class="item-card p-6 flex flex-col gap-4 group cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="aspect-video rounded-xl bg-slate-100 overflow-hidden relative">
+          ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />` : `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-4xl text-slate-300">image</span></div>`}
+          <div class="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur rounded-full text-[10px] font-black ${item.status === 'OPEN' ? 'text-emerald-600' : 'text-slate-400'} flex items-center gap-1 shadow-sm">
+            <span class="w-2 h-2 ${item.status === 'OPEN' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'} rounded-full"></span> ${item.status === 'OPEN' ? (item.location || '').toUpperCase() : 'CLAIMED'}
+          </div>
+        </div>
+        <div>
+          <p class="text-[10px] font-black text-slate-400 mb-1">FOUND ON ${new Date(item.item_date).toLocaleDateString()}</p>
+          <h3 class="text-xl font-bold font-headline">${item.item_name}</h3>
+          <p class="text-sm text-slate-500 line-clamp-2 mt-1">${item.description}</p>
+        </div>
+        ${item.status === 'OPEN' ? `<button onclick="openClaimModal('${item.id}')" class="mt-auto py-3 bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm">Claim Item</button>` : ''}
+      </div>
+    `).join('') : '<p class="col-span-full text-center py-10 text-slate-400 font-bold">No found items to display.</p>';
+
+    lostContainer.innerHTML = lostItems.length ? lostItems.map(item => `
+      <div class="flex gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group border border-transparent hover:border-slate-200 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+           ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover" />` : `<div class="w-full h-full flex items-center justify-center bg-slate-200"><span class="material-symbols-outlined text-slate-400">inventory</span></div>`}
+        </div>
+        <div>
+          <h4 class="text-sm font-bold font-headline text-slate-800 group-hover:text-secondary transition-colors">${item.item_name}</h4>
+          <p class="text-xs text-slate-500 mt-1 line-clamp-1">${item.description}</p>
+          <p class="text-[10px] font-bold text-slate-400 mt-2">REPORTED ${new Date(item.item_date).toLocaleDateString()}</p>
+        </div>
+      </div>
+    `).join('') : '<p class="text-center py-10 text-slate-400 text-[10px] font-bold">No lost reports found.</p>';
+  }
+
+  async function handleItemSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    const formData = new FormData(e.target);
+    const imageFile = formData.get('image');
+    
+    // Function to process and save item
+    const finalizeSubmission = (imageDataUrl) => {
+        const newItem = {
+            id: 'item-' + Date.now(),
+            item_name: formData.get('item_name'),
+            item_type: document.getElementById('item-type').value,
+            location: formData.get('location'),
+            description: formData.get('description'),
+            item_date: formData.get('date') || new Date().toISOString().split('T')[0],
+            status: 'OPEN',
+            image: imageDataUrl || null,
+            reporter: formData.get('reporter_name')
+        };
+
+        items.unshift(newItem);
+        saveToLocal();
+        showToast('Report submitted successfully!');
+        toggleModal('report-modal');
+        e.target.reset();
+        btn.disabled = false;
+    };
+
+    if (imageFile && imageFile.size > 0) {
+        const reader = new FileReader();
+        reader.onload = (event) => finalizeSubmission(event.target.result);
+        reader.readAsDataURL(imageFile);
+    } else {
+        finalizeSubmission(null);
+    }
+  }
+
+  function handleClaimSubmit(e) {
+    e.preventDefault();
+    const itemId = document.getElementById('claim-item-id').value;
+    const itemIndex = items.findIndex(i => i.id === itemId);
+    
+    if (itemIndex > -1) {
+        items[itemIndex].status = 'CLAIMED';
+        items[itemIndex].image = null; // Remove image after claim
+        saveToLocal();
+        showToast('Claimed successfully! Image removed.');
+        toggleModal('claim-modal');
+        e.target.reset();
+    }
+  }
+
+  function filterItems() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const dept = document.getElementById('dept-filter').value; // In this mock, dept filter is a UI demo
+    const date = document.getElementById('date-filter').value;
+
+    const filtered = items.filter(item => {
+        const matchesSearch = item.item_name.toLowerCase().includes(search) || item.description.toLowerCase().includes(search);
+        const matchesDate = !date || item.item_date === date;
+        return matchesSearch && matchesDate;
+    });
+
+    renderItems(filtered);
+  }
+
+  function resetFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('dept-filter').value = '';
+    document.getElementById('date-filter').value = '';
+    renderItems(items);
+  }
+
+  // Final UI Adjustments for "Notebook" Reversion
+  document.addEventListener('DOMContentLoaded', () => {
+    // Remove backend pulsing indicator
+    const liveSync = document.querySelector('.flex.items-center.gap-2.mt-2');
+    if (liveSync) liveSync.remove();
+    
+    renderItems(items);
+  });
+</script>
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const isHidden = sidebar.classList.contains('-translate-x-full');
+    
+    if (isHidden) {
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('opacity-0');
+      }, 10);
+    } else {
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Gymkhana | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#f8fafc",
+            "primary": "#0052cc",
+            "secondary": "#fb923c",
+            "accent-green": "#22c55e",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#e2e8f0"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Notebook Style Styles */
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: #fdf8f0; 
+      background-image: 
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+    .sport-card-light {
+      background: #ffffff;
+      border: 2px solid #f1f5f9;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sport-card-light:hover {
+      border-color: #0052cc;
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 82, 204, 0.1);
+    }
+    .athletic-italic {
+      font-style: italic;
+      letter-spacing: -0.02em;
+    }
+    .stat-pill {
+      background: linear-gradient(135deg, #0052cc 0%, #2563eb 100%);
+    }
+
+    /* Global Interaction Components */
+    #ai-sidebar {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: -40px 0 80px -20px rgba(0, 82, 204, 0.15);
+    }
+    #ai-sidebar.open {
+      transform: translateX(0);
+    }
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+<div class="paper-grain"></div>
+
+<!-- Sidebar -->
+<!-- Mobile Backdrop -->
+<div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="mb-10 px-4">
+    <div class="flex items-center gap-2 mb-1">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg">
+        <span class="material-symbols-outlined text-sm">sports_kabaddi</span>
+      </div>
+      <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+    </div>
+    <p class="text-[10px] text-on-surface-variant font-bold">Gymkhana</p>
+  </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="courses.html">
+        <span class="material-symbols-outlined">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="canteen.html">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="occupancy.html">
+        <span class="material-symbols-outlined">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="lost-found.html">
+        <span class="material-symbols-outlined">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="settings.html">
+        <span class="material-symbols-outlined">settings</span>Settings
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline"
+        href="login.html">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+</aside>
+
+<!-- Mobile Header -->
+<div class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+  <div class="flex items-center gap-2">
+    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+      <span class="material-symbols-outlined text-sm font-black">school</span>
+    </div>
+    <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+  </div>
+  <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+  </button>
+</div>
+
+<main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-12 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+  <header class="flex justify-between items-center">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full border border-primary/20">FITNESS & SPORTS</span>
+        <span class="text-xs font-bold text-on-surface-variant italic">Playing area is open until 10:00 PM</span>
+      </div>
+      <h1 class="text-6xl font-black font-headline text-on-surface leading-tight italic">
+        Gym & <span class="text-primary">Sports.</span>
+      </h1>
+      <p class="text-on-surface-variant font-medium max-w-md mt-2">Take sports tools or book a place to play with your friends.</p>
+    </div>
+    <div class="flex gap-4">
+      <div class="bg-white p-6 rounded-2xl border border-outline-variant text-center shadow-sm">
+        <p class="text-[10px] font-black text-on-surface-variant mb-1">Students Playing</p>
+        <p class="text-3xl font-black text-primary">142</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-outline-variant text-center shadow-sm">
+        <p class="text-[10px] font-black text-on-surface-variant mb-1">Tools in use</p>
+        <p class="text-3xl font-black text-secondary">86%</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- My Bookings Dashboard -->
+  <section id="bookings-dashboard" class="space-y-6">
+    <div class="flex items-baseline justify-between gap-3">
+      <div class="flex items-baseline gap-3">
+        <h2 class="text-3xl font-black font-headline italic leading-none text-on-surface">My Sports Dashboard</h2>
+        <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider italic">Your active requests</p>
+      </div>
+      <button onclick="fetchMyBookings()" class="text-[10px] font-black text-primary uppercase border-b border-primary/20 hover:border-primary transition-all">Refresh List</button>
+    </div>
+
+    <div id="my-bookings-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Bookings will be loaded here -->
+      <div class="col-span-full py-12 text-center bg-white/50 rounded-[2.5rem] border border-dashed border-outline-variant">
+        <p class="text-xs font-bold text-on-surface-variant italic">No active bookings found. Start a game now!</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Section 1: Sports Tools -->
+  <section class="space-y-6">
+    <div class="flex items-baseline gap-3">
+      <h2 class="text-3xl font-black font-headline italic leading-none text-on-surface">Take Sports Tools</h2>
+      <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider italic">Items you can borrow</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <!-- Cricket -->
+      <div class="bg-white rounded-[2rem] p-6 border border-outline-variant shadow-sm hover:border-primary transition-all group">
+        <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-primary mb-4">
+          <span class="material-symbols-outlined text-2xl">sports_cricket</span>
+        </div>
+        <h3 class="text-lg font-black font-headline italic mb-1">Cricket Kit</h3>
+        <p class="text-[10px] text-on-surface-variant font-bold mb-4">Bat, Ball, Pads & Gloves</p>
+        <button onclick="openBookingModal('EQUIPMENT', 'Cricket Kit')" 
+          class="w-full py-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-slate-100">
+          Borrow Tool
+        </button>
+      </div>
+
+      <!-- Football -->
+      <div class="bg-white rounded-[2rem] p-6 border border-outline-variant shadow-sm hover:border-primary transition-all group">
+        <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-on-surface mb-4">
+          <span class="material-symbols-outlined text-2xl">sports_soccer</span>
+        </div>
+        <h3 class="text-lg font-black font-headline italic mb-1">Football</h3>
+        <p class="text-[10px] text-on-surface-variant font-bold mb-4">Standard size ball</p>
+        <button onclick="openBookingModal('EQUIPMENT', 'Football')" 
+          class="w-full py-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-slate-100">
+          Borrow Tool
+        </button>
+      </div>
+
+      <!-- Badminton -->
+      <div class="bg-white rounded-[2rem] p-6 border border-outline-variant shadow-sm hover:border-primary transition-all group">
+        <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-4">
+          <span class="material-symbols-outlined text-2xl">sports_tennis</span>
+        </div>
+        <h3 class="text-lg font-black font-headline italic mb-1">Badminton</h3>
+        <p class="text-[10px] text-on-surface-variant font-bold mb-4">2 Rackets & 1 Shuttle</p>
+        <button onclick="openBookingModal('EQUIPMENT', 'Badminton')" 
+          class="w-full py-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-slate-100">
+          Borrow Tool
+        </button>
+      </div>
+
+      <!-- Basketball -->
+      <div class="bg-white rounded-[2rem] p-6 border border-outline-variant shadow-sm hover:border-primary transition-all group">
+        <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-4">
+          <span class="material-symbols-outlined text-2xl">sports_basketball</span>
+        </div>
+        <h3 class="text-lg font-black font-headline italic mb-1">Basketball</h3>
+        <p class="text-[10px] text-on-surface-variant font-bold mb-4">Standard leather ball</p>
+        <button onclick="openBookingModal('EQUIPMENT', 'Basketball')" 
+          class="w-full py-3 bg-slate-50 hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-slate-100">
+          Borrow Tool
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Indoor Games & Gym -->
+  <section class="space-y-6">
+    <div class="flex items-baseline gap-3">
+      <h2 class="text-3xl font-black font-headline italic leading-none text-on-surface">Indoor Games & Gym</h2>
+      <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider italic">Book a place to play</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Table Tennis Board -->
+      <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div class="w-full md:w-1/3 aspect-square bg-blue-50/50 rounded-3xl flex items-center justify-center border border-blue-100">
+          <span class="material-symbols-outlined text-6xl text-primary">sports_tennis</span>
+        </div>
+        <div class="flex-1 space-y-4">
+          <div>
+            <h3 class="text-2xl font-black font-headline italic leading-tight">Table Tennis Board</h3>
+            <p class="text-xs text-on-surface-variant font-medium mt-1 italic">3 boards are currently free in the main hall.</p>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-center">
+              <p class="text-lg font-black text-primary">03</p>
+              <p class="text-[8px] font-black text-on-surface-variant uppercase">Available</p>
+            </div>
+            <div class="text-center">
+              <p class="text-lg font-black text-secondary">02</p>
+              <p class="text-[8px] font-black text-on-surface-variant uppercase">Booked</p>
+            </div>
+            <button onclick="openBookingModal('TURF', 'Table Tennis Board')" 
+              class="flex-1 ml-4 py-4 bg-primary text-white rounded-2xl text-[10px] font-black italic shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+              Book a Board
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carrom & Chess -->
+      <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div class="w-full md:w-1/3 aspect-square bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-200">
+          <span class="material-symbols-outlined text-6xl text-on-surface">casino</span>
+        </div>
+        <div class="flex-1 space-y-4">
+          <div>
+            <h3 class="text-2xl font-black font-headline italic leading-tight">Carrom & Chess</h3>
+            <p class="text-xs text-on-surface-variant font-medium mt-1 italic">Take a board and find a free chair in the lobby.</p>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-center">
+              <p class="text-lg font-black text-primary">08</p>
+              <p class="text-[8px] font-black text-on-surface-variant uppercase">Available</p>
+            </div>
+            <div class="text-center">
+              <p class="text-lg font-black text-secondary">04</p>
+              <p class="text-[8px] font-black text-on-surface-variant uppercase">Booked</p>
+            </div>
+            <button onclick="openBookingModal('TURF', 'Carrom & Chess')" 
+              class="flex-1 ml-4 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black italic shadow-lg shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all">
+              Reserve Board
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Gym -->
+      <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm flex flex-col md:flex-row gap-8 items-center col-span-1 md:col-span-2">
+        <div class="w-full md:w-1/4 aspect-video bg-orange-50/50 rounded-3xl flex items-center justify-center border border-orange-100">
+          <span class="material-symbols-outlined text-7xl text-orange-600">fitness_center</span>
+        </div>
+        <div class="flex-1 space-y-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-3xl font-black font-headline italic leading-tight">Main Campus Gym</h3>
+              <p class="text-sm text-on-surface-variant font-medium mt-1 italic">World-class machines, free weights, and cross-trainer area.</p>
+            </div>
+            <div class="text-right">
+              <span class="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black rounded-full border border-green-100">CROWD: LOW</span>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <button onclick="openBookingModal('TURF', 'Main Campus Gym')" 
+              class="flex-1 py-5 bg-gradient-to-br from-primary to-blue-700 text-white rounded-[2rem] text-xs font-black italic shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all">
+              Book a Workout Slot
+            </button>
+            <button onclick="showToast('Gym location sent to your map.')" 
+              class="px-10 py-5 bg-white border border-outline-variant rounded-[2rem] text-[10px] font-black italic hover:bg-slate-50 transition-all">
+              View Map
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Assistant FAB -->
+  <button onclick="toggleAI()" class="fixed bottom-8 right-8 bg-gradient-to-br from-primary to-secondary text-white p-5 rounded-full shadow-2xl flex items-center gap-3 group hover:scale-105 active:scale-95 transition-all duration-300 z-50">
+    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">sports_kabaddi</span>
+    <span class="font-headline font-bold text-sm max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">Gym Helper</span>
+  </button>
+
+  <!-- AI Sidebar -->
+  <div id="ai-sidebar" class="fixed top-0 right-0 h-screen w-[400px] bg-white z-[60] translate-x-full flex flex-col border-l border-outline-variant">
+    <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+      <div>
+        <h3 class="text-xl font-black font-headline italic text-primary">Gym Helper</h3>
+        <p class="text-[10px] font-black text-on-surface-variant leading-none mt-1">Ready to play?</p>
+      </div>
+      <button onclick="toggleAI()" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <div class="flex-1 p-8 overflow-y-auto space-y-6">
+      <div class="p-4 bg-primary/5 rounded-2xl border border-primary/10 text-primary">
+        <p class="text-xs font-medium leading-relaxed italic">"Hello! I am your Gym Helper. You can ask me about sports equipment availability or gym timings. How can I help you today?"</p>
+      </div>
+      <div class="space-y-2">
+        <p class="text-[10px] font-black text-on-surface-variant px-1 italic">Quick Help</p>
+        <button onclick="showToast('Gym starts at 6:00 AM and closes at 10:00 PM.')" class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+          <span class="text-sm font-bold italic">Check Gym Timings</span>
+          <span class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">schedule</span>
+        </button>
+        <button onclick="showToast('All Table Tennis boards are currently in the main hall.')" class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+          <span class="text-sm font-bold italic">Where is TT Board?</span>
+          <span class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">location_on</span>
+        </button>
+      </div>
+    </div>
+    <div class="p-8 border-t border-outline-variant">
+      <div class="relative">
+        <input type="text" placeholder="Ask a question..." class="w-full pl-4 pr-12 py-4 bg-slate-50 border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-medium italic">
+        <button class="absolute right-3 top-1/2 -translate-y-1/2 text-primary p-2">
+          <span class="material-symbols-outlined">send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Component -->
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+    <span class="material-symbols-outlined text-primary">info</span>
+    <p id="toast-message" class="text-xs font-bold italic"></p>
+  </div>
+
+</main>
+
+  <!-- Booking Modal -->
+  <div id="booking-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-outline-variant overflow-hidden">
+      <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 id="modal-title" class="text-2xl font-black font-headline italic text-primary">Book Equipment</h3>
+          <p id="modal-item-name" class="text-[10px] font-black text-on-surface-variant leading-none mt-1 uppercase tracking-widest"></p>
+        </div>
+        <button onclick="closeBookingModal()" class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all">
+          <span class="material-symbols-outlined text-on-surface-variant">close</span>
+        </button>
+      </div>
+      <form id="booking-form" class="p-8 space-y-6 text-left">
+        <input type="hidden" id="booking-item-type">
+        <input type="hidden" id="booking-item-id">
+        
+        <div class="grid grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Student Name</label>
+            <input type="text" id="student_name" required placeholder="Tejas Dubey" class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Roll Number</label>
+            <input type="text" id="roll_number" required placeholder="CS-2024-042" class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Department</label>
+          <input type="text" id="department" required placeholder="Computer Science" class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Book Date</label>
+            <input type="date" id="booking_date" required class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Time Slot</label>
+            <select id="time_slot" required class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+              <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM</option>
+              <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM</option>
+              <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM</option>
+              <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM</option>
+              <option value="06:00 PM - 08:00 PM">06:00 PM - 08:00 PM</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="quantity-field" class="space-y-2">
+          <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Quantity</label>
+          <input type="number" id="quantity" min="1" value="1" class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-[10px] font-black text-on-surface-variant uppercase ml-1">Contact Number</label>
+          <input type="text" id="contact_number" required placeholder="+91 98765 43210" class="w-full px-4 py-3 bg-slate-50 border-outline-variant rounded-xl text-sm font-medium">
+        </div>
+
+        <button type="submit" class="w-full py-4 bg-primary text-white rounded-2xl text-sm font-black italic shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Submit Booking Request</button>
+      </form>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Initialize bookings from localStorage
+  let bookings = JSON.parse(localStorage.getItem('campus_gym_bookings')) || [];
+
+  function saveGymData() {
+    localStorage.setItem('campus_gym_bookings', JSON.stringify(bookings));
+    renderBookings();
+  }
+
+  function toggleAI() {
+    const sidebar = document.getElementById('ai-sidebar');
+    sidebar.classList.toggle('open');
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-message');
+    toastMsg.textContent = message;
+    toast.classList.add('toast-active');
+    
+    setTimeout(() => {
+      toast.classList.remove('toast-active');
+    }, 3000);
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const isHidden = sidebar.classList.contains('-translate-x-full');
+    
+    if (isHidden) {
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('opacity-0');
+      }, 10);
+    } else {
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+  }
+
+  function openBookingModal(type, itemName) {
+    const modal = document.getElementById('booking-modal');
+    const title = document.getElementById('modal-title');
+    const label = document.getElementById('modal-item-name');
+    const qField = document.getElementById('quantity-field');
+    const typeInput = document.getElementById('booking-item-type');
+    const idInput = document.getElementById('booking-item-id');
+    
+    typeInput.value = type;
+    label.innerText = itemName;
+    title.innerText = type === 'EQUIPMENT' ? 'Book Equipment' : 'Book Facility';
+    
+    if (type === 'EQUIPMENT') {
+        qField.classList.remove('hidden');
+    } else {
+        qField.classList.add('hidden');
+    }
+    
+    modal.classList.remove('hidden');
+  }
+
+  function closeBookingModal() {
+    document.getElementById('booking-modal').classList.add('hidden');
+  }
+
+  document.getElementById('booking-form').onsubmit = (e) => {
+    e.preventDefault();
+    const type = document.getElementById('booking-item-type').value;
+    const itemName = document.getElementById('modal-item-name').innerText;
+    
+    const newBooking = {
+        id: 'GYM' + Math.floor(Math.random() * 90000 + 10000),
+        type: type === 'EQUIPMENT' ? 'Equipment' : 'Facility',
+        item_name: itemName,
+        student_name: document.getElementById('student_name').value,
+        roll_number: document.getElementById('roll_number').value,
+        department: document.getElementById('department').value,
+        booking_date: document.getElementById('booking_date').value,
+        time_slot: document.getElementById('time_slot').value,
+        status: 'REQUESTED',
+        created_at: new Date().toISOString()
+    };
+
+    bookings.unshift(newBooking);
+    saveGymData();
+    showToast("Success! Your booking is requested.");
+    closeBookingModal();
+    e.target.reset();
+  };
+
+  function renderBookings() {
+    const listEl = document.getElementById('my-bookings-list');
+    
+    if (bookings.length === 0) {
+        listEl.innerHTML = `
+            <div class="col-span-full py-12 text-center bg-white/50 rounded-[2.5rem] border border-dashed border-outline-variant">
+                <p class="text-xs font-bold text-on-surface-variant italic">No active bookings found. Start a game now!</p>
+            </div>
+        `;
+        return;
+    }
+
+    listEl.innerHTML = bookings.map(b => {
+        const statusColor = b.status === 'APPROVED' ? 'text-green-600 bg-green-50' : b.status === 'REJECTED' ? 'text-red-500 bg-red-50' : 'text-orange-500 bg-orange-50';
+        
+        return `
+            <div class="bg-white p-6 rounded-[2rem] border border-outline-variant shadow-sm flex flex-col justify-between group hover:border-primary transition-all animate-in fade-in slide-in-from-bottom-4">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined text-sm">${b.type === 'Equipment' ? 'sports_kabaddi' : 'stadium'}</span>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-[8px] font-black italic uppercase ${statusColor}">${b.status}</span>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black text-on-surface-variant uppercase mb-1">${b.type}</p>
+                    <h4 class="text-lg font-black font-headline italic leading-tight mb-2">${b.item_name}</h4>
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                        <span class="material-symbols-outlined text-xs">calendar_today</span>
+                        ${b.booking_date}
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500 mt-1">
+                        <span class="material-symbols-outlined text-xs">schedule</span>
+                        ${b.time_slot}
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-outline-variant flex justify-between items-center text-left">
+                    <p class="text-[10px] font-bold text-on-surface-variant italic">Ref: #${b.id}</p>
+                    <button onclick="cancelBooking('${b.id}')" class="text-[10px] font-black text-red-500 uppercase hover:underline">Cancel</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+  }
+
+  function cancelBooking(id) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    bookings = bookings.filter(b => b.id !== id);
+    saveGymData();
+    showToast("Booking cancelled successfully.");
+  }
+
+  // Load everything on initial start
+  document.addEventListener('DOMContentLoaded', () => {
+    // Remove backend pulsing indicators
+    const liveSync = document.querySelector('.flex.items-center.gap-2.mt-2');
+    if (liveSync) liveSync.remove();
+
+    renderBookings();
+  });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Faculty Dashboard | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Supabase Library & Config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    // 🛡️ Global Auth Guard
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      return session.user;
+    }
+  </script>
+  <style>
+    /* Faculty Dashboard Styles - Campus 360 */
+
+    :root {
+      --background: #fdf8f0;
+      --surface: #ffffff;
+      --primary: #004ac6;
+      --secondary: #fb923c;
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+      --on-surface: #0f172a;
+      --on-surface-variant: #64748b;
+      --outline-variant: #f1f5f9;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+      overflow-x: hidden;
+    }
+
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .hover-lift {
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-8px);
+    }
+
+    .marker-highlight {
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+    }
+
+    .marker-highlight::after {
+      content: '';
+      position: absolute;
+      left: -5%;
+      bottom: -2px;
+      width: 110%;
+      height: 12px;
+      background: rgba(37, 99, 235, 0.15);
+      z-index: -1;
+      transform: skewX(-15deg) rotate(-1deg);
+      border-radius: 4px;
+    }
+
+    .sticky-note {
+      background: #fef08a;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
+      transform: rotate(-1.5deg);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .hand-drawn-circle {
+      position: relative;
+    }
+
+    .hand-drawn-circle::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      border: 3px solid rgba(0, 74, 198, 0.1);
+      border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+      transform: rotate(-3deg);
+      z-index: -1;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Sidebar Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--outline-variant);
+      border-radius: 10px;
+    }
+
+    /* Section Transitions */
+    .content-section {
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .content-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Expandable Card Logic (Parity with Student) */
+    .fixed-center {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: 90vw !important;
+      max-width: 800px !important;
+      height: auto !important;
+      max-height: 85vh !important;
+      z-index: 1000 !important;
+      border-radius: 2.5rem !important;
+      cursor: default !important;
+      box-shadow: 0 50px 100px -20px rgba(15, 23, 42, 0.3) !important;
+      backdrop-filter: none !important; /* Fix blur issue on expansion */
+      background: white !important;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Custom Checkbox/Input Style */
+    input[type="text"], input[type="email"], select, textarea {
+      background: white;
+      border: 1px solid var(--outline-variant);
+      border-radius: 1rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 74, 198, 0.05);
+    }
+
+    /* Chart Stylings */
+    .chart-bar {
+      transition: height 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Timetable & Canteen Styles (Student Grade) */
+    .planner-card {
+      background: #ffffff;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .class-block {
+      border-radius: 20px;
+      padding: 1.5rem;
+      border-left: 6px solid;
+      transition: all 0.2s;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .class-block:hover {
+      filter: brightness(0.98);
+      transform: scale(0.99);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+    .food-card {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid #f1f5f9;
+    }
+    .food-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px -12px rgba(234, 88, 12, 0.12);
+      border-color: #ea580c;
+    }
+    .appetite-gradient {
+      background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+    }
+    .price-badge {
+      background: rgba(234, 88, 12, 0.1);
+      color: #ea580c;
+      font-weight: 800;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+    #toast {
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#004ac6",
+            "secondary": "#fb923c",
+            "success": "#22c55e",
+            "warning": "#eab308",
+            "error": "#ef4444",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen relative">
+  <div class="paper-grain"></div>
+  <div id="modal-backdrop-global" class="modal-backdrop"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-sm">school</span>
+        </div>
+        <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Faculty Portal</p>
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2">
+      <a onclick="switchSection('dashboard')" id="nav-dashboard" class="nav-link flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline cursor-pointer">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>Dashboard
+      </a>
+      <a onclick="switchSection('gc-system')" id="nav-gc-system" class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">hub</span>GC System
+      </a>
+      <a onclick="switchSection('timetable')" id="nav-timetable" class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">schedule</span>Timetable
+      </a>
+      <a onclick="switchSection('canteen')" id="nav-canteen" class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+    </nav>
+
+    <div class="pt-6 border-t border-outline-variant">
+      <a id="logout-link" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+
+    <script>
+      document.getElementById('logout-link').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+      });
+
+      // 🔄 Initialize Faculty Dashboard
+      async function initializeFacultyDashboard() {
+        const user = await checkAuth();
+        if (!user) return;
+
+        try {
+          // 1. Fetch Profile & Faculty Data
+          const { data, error: profileError } = await supabase
+            .from('profiles')
+            .select('*, faculty(*)')
+            .eq('id', user.id);
+
+          if (profileError) throw profileError;
+
+          if (!data || data.length === 0) {
+            console.warn("No faculty profile found for user:", user.id);
+            alert("Faculty profile not found. Please contact admin.");
+            return;
+          }
+
+          const profile = data[0];
+          const facultyData = (profile.faculty && profile.faculty.length > 0) ? profile.faculty[0] : null;
+
+          // 2. Update Header & Top Bar
+          document.getElementById('top-bar-faculty-name').textContent = profile.full_name || 'Faculty Member';
+          document.getElementById('faculty-card-name').textContent = profile.full_name || 'Faculty Member';
+          
+          // 3. Update Card Details
+          if (facultyData) {
+            document.getElementById('faculty-card-dept-pos').textContent = `${facultyData.designation || 'Faculty'} • ${facultyData.department_id || 'N/A'}`;
+            document.getElementById('faculty-card-id').textContent = facultyData.faculty_id || '--';
+            
+            if (facultyData.specialization) {
+              document.getElementById('faculty-card-subject').textContent = facultyData.specialization;
+            }
+          } else {
+            document.getElementById('faculty-card-dept-pos').textContent = "Incomplete Faculty Data";
+            console.warn("Faculty record missing for profile:", profile.id);
+          }
+
+          console.log("Faculty Portal Initialized for", profile.full_name);
+
+        } catch (error) {
+          console.error("Faculty Init Error:", error.message);
+          alert("Error loading dashboard: " + error.message);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', initializeFacultyDashboard);
+    </script>
+
+    <!-- Sticky Note Area -->
+    <div class="mt-auto pt-6">
+      <div class="sticky-note p-5 flex flex-col gap-2 relative z-10 border border-yellow-200/50">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-10 h-3 bg-white/40 shadow-sm"></div>
+        <div class="flex items-center gap-2 text-yellow-800 text-[9px] font-black italic opacity-60">
+          <span class="material-symbols-outlined text-[12px]">push_pin</span> Reminder
+        </div>
+        <p class="text-[11px] font-bold leading-snug text-yellow-900/90 italic">"Final year project review today at 3:00 PM in Lab 4."</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] hidden lg:hidden transition-opacity"></div>
+
+  <!-- Main Content Wrapper -->
+  <main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-10 max-w-7xl mx-auto overflow-x-hidden pt-24 lg:pt-8 min-h-screen">
+    
+    <!-- Top Bar -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/30 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/40 shadow-sm">
+      <div class="flex items-center gap-4 lg:hidden">
+        <button onclick="toggleSidebar()" class="p-2 text-dark hover:bg-white/50 rounded-xl transition-colors">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <span class="text-lg font-black font-headline italic text-primary">Campus 360</span>
+      </div>
+      <div class="hidden md:block">
+        <h2 id="section-title" class="text-sm font-black text-on-surface-variant uppercase tracking-widest">Faculty Dashboard</h2>
+      </div>
+      <div class="flex items-center gap-6 w-full md:w-auto justify-end">
+        <div class="relative group cursor-pointer">
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">notifications</span>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full ring-4 ring-background"></span>
+        </div>
+          <div class="flex items-center gap-3 bg-white/60 p-1.5 pr-4 rounded-full border border-outline-variant hover:border-primary transition-all cursor-pointer group">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined">person</span>
+          </div>
+          <div class="hidden sm:block">
+            <p class="text-[10px] font-black text-primary uppercase leading-tight">Welcome Back</p>
+            <p id="top-bar-faculty-name" class="text-xs font-black text-slate-900 truncate max-w-[120px]">Dr. Rajesh Khanna</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT SECTIONS -->
+
+    <!-- Dashboard Section -->
+    <section id="section-dashboard" class="content-section active space-y-10">
+      
+      <!-- Faculty ID Card Wrapper -->
+      <div class="max-w-4xl mx-auto group">
+        <div id="faculty-card" onclick="toggleCardExpand()" class="glass-card rounded-[3rem] p-10 flex flex-col md:flex-row items-center gap-10 hover-lift achievement-glow cursor-pointer transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 overflow-hidden border border-outline-variant">
+          
+          <button id="card-close-btn" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-on-surface-variant rounded-full hidden items-center justify-center z-50 transition-all">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+
+          <!-- Compact View -->
+          <div id="card-photo" class="relative shrink-0 pointer-events-none transition-all duration-500">
+            <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse"></div>
+            <div class="w-44 h-44 rounded-full p-2 bg-gradient-to-tr from-primary via-white to-secondary relative z-10">
+              <div class="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-slate-300 overflow-hidden border-4 border-white">
+                <span id="faculty-avatar-icon" class="material-symbols-outlined text-6xl">person</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="card-basics" class="flex-1 text-center md:text-left space-y-4 w-full">
+            <div>
+              <h2 id="faculty-card-name" class="text-4xl font-black font-headline italic leading-tight">Dr. Rajesh Khanna</h2>
+              <p id="faculty-card-dept-pos" class="text-primary font-bold text-sm">Sr. Professor • Computer Science Engineering</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div class="bg-slate-50/50 p-3 rounded-2xl border border-outline-variant shadow-sm text-center">
+                <p class="text-[9px] font-black text-on-surface-variant uppercase">Faculty ID</p>
+                <p id="faculty-card-id" class="text-xs font-black text-slate-900">FAC-CS-001</p>
+              </div>
+              <div class="bg-slate-50/50 p-3 rounded-2xl border border-outline-variant shadow-sm text-center">
+                <p class="text-[9px] font-black text-on-surface-variant uppercase">Subject</p>
+                <p id="faculty-card-subject" class="text-xs font-black text-slate-900">Machine Learning</p>
+              </div>
+              <div class="bg-slate-50/50 p-3 rounded-2xl border border-outline-variant shadow-sm text-center hidden md:block">
+                <p class="text-[9px] font-black text-on-surface-variant uppercase">Joined</p>
+                <p id="faculty-card-join-date" class="text-xs font-black text-slate-900">July 2018</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2 justify-center md:justify-start">
+               <span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full italic border border-primary/20">PHD HOLDER</span>
+               <span class="px-3 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic border border-success/20">A+ RATING</span>
+            </div>
+            <p id="card-tap-hint" class="text-[9px] text-primary font-black uppercase tracking-widest animate-bounce mt-4 opacity-50">Tap to expand full profile</p>
+          </div>
+
+          <!-- Expanded View Content (Simplified) -->
+          <div id="card-expanded" class="hidden w-full space-y-10 mt-6 pt-10 border-t border-outline-variant opacity-0 transition-opacity duration-500 overflow-y-auto max-h-[50vh] pr-4 custom-scrollbar">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-6 text-left">
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-sm">person</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Full Name</h4>
+                    <p id="profile-full-name-field" class="text-sm font-black text-slate-900">Dr. Rajesh Khanna</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0"><span class="material-symbols-outlined text-sm">badge</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Faculty ID</h4>
+                    <p id="profile-id-field" class="text-sm font-black text-slate-900">FAC-CS-001</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success shrink-0"><span class="material-symbols-outlined text-sm">account_tree</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Department</h4>
+                    <p id="profile-dept-field" class="text-sm font-black text-slate-900">Computer Science Engineering</p>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-6 text-left">
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center text-warning shrink-0"><span class="material-symbols-outlined text-sm">mail</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Email Address</h4>
+                    <p id="profile-email-field" class="text-sm font-black text-slate-900">rajesh.k@campus360.edu.in</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error shrink-0"><span class="material-symbols-outlined text-sm">call</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Phone Number</h4>
+                    <p class="text-sm font-black text-slate-900">+91 98765 43210</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 shrink-0"><span class="material-symbols-outlined text-sm">book</span></div>
+                  <div>
+                    <h4 class="text-[10px] font-black text-on-surface-variant uppercase">Primary Subject</h4>
+                    <p class="text-sm font-black text-slate-900">Machine Learning</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-success/10 rounded-2xl flex items-center justify-center text-success"><span class="material-symbols-outlined text-3xl">payments</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Salary Received</p>
+            <p class="text-2xl font-black font-headline text-slate-900">₹1,85,000</p>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-warning/10 rounded-2xl flex items-center justify-center text-warning"><span class="material-symbols-outlined text-3xl">hourglass_empty</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Pending Salary</p>
+            <p class="text-2xl font-black font-headline text-slate-900">₹0.00</p>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary"><span class="material-symbols-outlined text-3xl">event_available</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Attendance</p>
+            <p class="text-2xl font-black font-headline text-slate-900">96.5%</p>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600"><span class="material-symbols-outlined text-3xl">assignment</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Classes Assigned</p>
+            <p class="text-2xl font-black font-headline text-slate-900">08</p>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center text-sky-600"><span class="material-symbols-outlined text-3xl">upload_file</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Assignments</p>
+            <p class="text-2xl font-black font-headline text-slate-900">14</p>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift flex items-center gap-4">
+          <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600"><span class="material-symbols-outlined text-3xl">campaign</span></div>
+          <div>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Notices Sent</p>
+            <p class="text-2xl font-black font-headline text-slate-900">05</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Stats & Calendar View -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Attendance Stats & Graph -->
+        <div class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm space-y-8">
+          <div class="flex justify-between items-center">
+            <h3 class="text-2xl font-black font-headline italic">Attendance Stats</h3>
+            <span class="text-[10px] font-black text-primary px-3 py-1 bg-primary/5 rounded-full border border-primary/10">THIS MONTH</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 bg-success/5 border border-success/10 rounded-2xl">
+              <p class="text-[9px] font-black text-success uppercase">Present</p>
+              <p class="text-2xl font-black font-headline text-success">22 <span class="text-xs">Days</span></p>
+            </div>
+            <div class="p-4 bg-error/5 border border-error/10 rounded-2xl">
+              <p class="text-[9px] font-black text-error uppercase">Absent</p>
+              <p class="text-2xl font-black font-headline text-error">01 <span class="text-xs text-error/60">Day</span></p>
+            </div>
+            <div class="p-4 bg-warning/5 border border-warning/10 rounded-2xl">
+              <p class="text-[9px] font-black text-warning uppercase">Leave</p>
+              <p class="text-2xl font-black font-headline text-warning">01 <span class="text-xs text-warning/60">Day</span></p>
+            </div>
+            <div class="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+              <p class="text-[9px] font-black text-primary uppercase">Overall %</p>
+              <p class="text-2xl font-black font-headline text-primary">96.5%</p>
+            </div>
+          </div>
+
+          <!-- Simple Graphical Representation (Placeholder) -->
+          <div class="space-y-2 pt-4">
+            <div class="flex justify-between text-[10px] font-black text-on-surface-variant uppercase">
+              <span>Attendance Trend (Last 6 Months)</span>
+              <span class="text-primary italic">GROWING</span>
+            </div>
+            <div class="h-24 bg-slate-50 rounded-2xl flex items-end justify-between px-6 py-3 gap-2 border border-slate-100">
+               <div class="w-full bg-slate-200 rounded-t-lg" style="height: 70%"></div>
+               <div class="w-full bg-slate-200 rounded-t-lg" style="height: 85%"></div>
+               <div class="w-full bg-slate-200 rounded-t-lg" style="height: 80%"></div>
+               <div class="w-full bg-slate-200 rounded-t-lg" style="height: 90%"></div>
+               <div class="w-full bg-slate-200 rounded-t-lg" style="height: 75%"></div>
+               <div class="w-full bg-primary rounded-t-lg" style="height: 96%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar View (Visual Placeholder) -->
+        <div class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm space-y-8">
+           <div class="flex justify-between items-center">
+             <h3 class="text-2xl font-black font-headline italic">Calendar View</h3>
+             <div class="flex items-center gap-2 text-[10px] font-black text-slate-400">
+               <span class="w-2 h-2 rounded-full bg-success"></span> Present
+               <span class="w-2 h-2 rounded-full bg-error ml-2"></span> Absent
+             </div>
+           </div>
+           
+           <div class="grid grid-cols-7 gap-2 text-center">
+              <div class="text-[9px] font-black text-slate-300 uppercase">Mon</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Tue</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Wed</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Thu</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Fri</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Sat</div>
+              <div class="text-[9px] font-black text-slate-300 uppercase">Sun</div>
+              
+              <!-- Placeholder Days -->
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-200 border border-slate-100">26</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-200 border border-slate-100">27</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-200 border border-slate-100">28</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-200 border border-slate-100">29</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-200 border border-slate-100">30</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">1</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">2</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">3</div>
+              <div class="aspect-square bg-error/10 text-error flex items-center justify-center rounded-xl text-[10px] font-black border border-error/20 italic">4</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">5</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">6</div>
+              <div class="aspect-square bg-success/10 text-success flex items-center justify-center rounded-xl text-[10px] font-black border border-success/20 italic">7</div>
+              <div class="aspect-square bg-white shadow-sm ring-2 ring-primary/20 text-primary flex items-center justify-center rounded-xl text-[10px] font-black border border-primary/20 italic">8</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-300">9</div>
+              <div class="aspect-square bg-slate-50 flex items-center justify-center rounded-xl text-[10px] font-bold text-slate-300">10</div>
+           </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- GC System Section -->
+    <section id="section-gc-system" class="content-section space-y-10">
+      
+      <!-- Year Grid -->
+      <div id="gc-year-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div onclick="openYear('first')" class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm hover-lift cursor-pointer text-center space-y-4 group">
+          <div class="w-16 h-16 bg-primary/10 rounded-2xl mx-auto flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-3xl">looks_one</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-black font-headline italic text-slate-900">First Year</h3>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Batch 2027</p>
+          </div>
+        </div>
+
+        <div onclick="openYear('second')" class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm hover-lift cursor-pointer text-center space-y-4 group">
+          <div class="w-16 h-16 bg-secondary/10 rounded-2xl mx-auto flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-3xl">looks_two</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-black font-headline italic text-slate-900">Second Year</h3>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Batch 2026</p>
+          </div>
+        </div>
+
+        <div onclick="openYear('third')" class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm hover-lift cursor-pointer text-center space-y-4 group">
+          <div class="w-16 h-16 bg-success/10 rounded-2xl mx-auto flex items-center justify-center text-success group-hover:bg-success group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-3xl">looks_3</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-black font-headline italic text-slate-900">Third Year</h3>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Batch 2025</p>
+          </div>
+        </div>
+
+        <div onclick="openYear('fourth')" class="bg-white rounded-[3rem] p-10 border border-outline-variant shadow-sm hover-lift cursor-pointer text-center space-y-4 group">
+          <div class="w-16 h-16 bg-violet-100 rounded-2xl mx-auto flex items-center justify-center text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-3xl">looks_4</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-black font-headline italic text-slate-900">Fourth Year</h3>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase">Batch 2024</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject Grid (Initially Hidden) -->
+      <div id="gc-subject-view" class="hidden space-y-8">
+        <div class="flex items-center gap-4">
+          <button onclick="backToYears()" class="w-12 h-12 rounded-2xl bg-white border border-outline-variant flex items-center justify-center text-primary shadow-sm hover:translate-x-[-4px] transition-all">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div>
+            <h2 id="active-year-title" class="text-4xl font-black font-headline italic text-slate-900">Second Year</h2>
+            <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Select Subject to open GC Panel</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+           <div onclick="openGCBoard('Machine Learning')" class="bg-white p-8 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift cursor-pointer group flex flex-col gap-6">
+              <div class="flex justify-between items-start">
+                <div class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary transition-all group-hover:bg-primary group-hover:text-white"><span class="material-symbols-outlined text-3xl">neurology</span></div>
+                <span class="px-3 py-1 bg-success/10 text-success text-[10px] font-black rounded-full italic uppercase">Core</span>
+              </div>
+              <div>
+                <h4 class="text-xl font-black font-headline italic text-slate-900">Machine Learning</h4>
+                <p class="text-xs text-on-surface-variant font-bold leading-relaxed">Fundamental algorithms, Neural Networks, and Scikit-Learn.</p>
+              </div>
+              <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
+                 <div class="flex -space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black">64</div>
+                 </div>
+                 <span class="text-[10px] font-black text-primary italic">OPEN BOARD</span>
+              </div>
+           </div>
+           
+           <div onclick="openGCBoard('Advanced Algorithms')" class="bg-white p-8 rounded-[2.5rem] border border-outline-variant shadow-sm hover-lift cursor-pointer group flex flex-col gap-6">
+             <div class="flex justify-between items-start">
+               <div class="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary transition-all group-hover:bg-secondary group-hover:text-white"><span class="material-symbols-outlined text-3xl">data_exploration</span></div>
+               <span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full italic uppercase">Lab</span>
+             </div>
+             <div>
+               <h4 class="text-xl font-black font-headline italic text-slate-900">Advanced Algorithms</h4>
+               <p class="text-xs text-on-surface-variant font-bold leading-relaxed">Dynamic Programming, Graph Theory, and Hardness.</p>
+             </div>
+             <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
+                <div class="flex -space-x-2">
+                   <div class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black">68</div>
+                </div>
+                <span class="text-[10px] font-black text-secondary italic">OPEN BOARD</span>
+             </div>
+           </div>
+        </div>
+      </div>
+
+      <!-- Subject GC Panel (Deep View, Hidden initially) -->
+      <div id="gc-board-view" class="hidden space-y-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div class="flex items-center gap-4">
+            <button onclick="backToSubjects()" class="w-12 h-12 rounded-2xl bg-white border border-outline-variant flex items-center justify-center text-primary shadow-sm hover:translate-x-[-4px] transition-all">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div>
+              <h2 id="active-subject-header" class="text-4xl font-black font-headline italic text-slate-900">Machine Learning</h2>
+              <div class="flex items-center gap-3 mt-1">
+                 <span class="w-2 h-2 rounded-full bg-success"></span>
+                 <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Active Google Classroom Panel</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-4">
+             <button class="bg-white p-4 rounded-2xl border border-outline-variant shadow-sm hover:scale-105 transition-all text-primary"><span class="material-symbols-outlined">settings</span></button>
+             <button class="bg-white p-4 rounded-2xl border border-outline-variant shadow-sm hover:scale-105 transition-all text-primary"><span class="material-symbols-outlined">group</span></button>
+          </div>
+        </div>
+
+        <!-- GC Functional Tabs -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          
+          <!-- Column 1: Notes Upload -->
+          <div class="space-y-8">
+            <div class="bg-white p-8 rounded-[3rem] border border-outline-variant shadow-sm space-y-6">
+              <h3 class="text-xl font-black font-headline italic text-slate-900">Upload Notes</h3>
+              <div class="space-y-4">
+                 <div>
+                   <label class="text-[9px] font-black text-on-surface-variant uppercase ml-2">Title</p>
+                   <input id="note-title" type="text" class="w-full" placeholder="e.g. Intro to Neural Networks">
+                 </div>
+                 <div>
+                   <label class="text-[9px] font-black text-on-surface-variant uppercase ml-2">Description</p>
+                   <textarea id="note-description" class="w-full h-24 resize-none" placeholder="Covering Perceptrons and Backprop..."></textarea>
+                 </div>
+                 <div onclick="document.getElementById('note-file-input').click()" class="border-2 border-dashed border-outline-variant rounded-2xl p-6 text-center hover:border-primary transition-all cursor-pointer group">
+                    <span class="material-symbols-outlined text-3xl text-slate-300 group-hover:text-primary transition-all">cloud_upload</span>
+                    <p id="note-file-name" class="text-[10px] font-black text-slate-400 mt-2">CLICK TO UPLOAD PDF/PPT/DOC</p>
+                    <input type="file" id="note-file-input" class="hidden" onchange="document.getElementById('note-file-name').textContent = this.files[0].name">
+                 </div>
+                 <button id="post-note-btn" onclick="uploadNote()" class="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-95 transition-transform">POST CONTENT</button>
+              </div>
+            </div>
+
+            <!-- Uploaded List -->
+            <div class="space-y-4">
+              <p class="text-[10px] font-black text-on-surface-variant uppercase ml-2">Posted Materials</p>
+              <div id="posted-notes-list" class="space-y-4">
+                <!-- Notes will be loaded here -->
+                <div class="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 flex items-center justify-between group cursor-pointer hover:bg-white transition-all">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center"><span class="material-symbols-outlined text-sm font-black">picture_as_pdf</span></div>
+                    <div>
+                      <p class="text-xs font-black text-slate-900">Sample Lecture</p>
+                      <p class="text-[9px] text-slate-400 font-bold">PDF • 4.2 MB • Oct 12</p>
+                    </div>
+                  </div>
+                  <span class="material-symbols-outlined text-slate-300 group-hover:text-error transition-all">delete</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Assignment Hub -->
+          <div class="space-y-8">
+            <div class="bg-white p-8 rounded-[3rem] border border-outline-variant shadow-sm space-y-6">
+              <h3 class="text-xl font-black font-headline italic text-slate-900">Create Assignment</h3>
+              <div class="space-y-4">
+                 <div>
+                   <label class="text-[9px] font-black text-on-surface-variant uppercase ml-2">Deadline</p>
+                   <input type="date" class="w-full">
+                 </div>
+                 <div>
+                   <label class="text-[9px] font-black text-on-surface-variant uppercase ml-2">Max Marks</p>
+                   <input type="text" class="w-full" placeholder="100">
+                 </div>
+                 <button class="w-full bg-secondary text-white py-4 rounded-2xl font-black text-xs shadow-lg shadow-secondary/20 hover:scale-95 transition-transform">CREATE TASK</button>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-[3rem] border border-outline-variant shadow-sm space-y-6">
+              <h3 class="text-xl font-black font-headline italic text-slate-900">Student Submissions</h3>
+              <div class="space-y-4 overflow-y-auto max-h-[300px] custom-scrollbar pr-2">
+                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-outline-variant">
+                    <div>
+                      <p class="text-xs font-black text-slate-900">Tejas Dubey</p>
+                      <p class="text-[9px] text-success font-black italic">SUBMITTED ON TIME</p>
+                    </div>
+                    <button class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center"><span class="material-symbols-outlined text-sm">download</span></button>
+                 </div>
+                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-outline-variant">
+                    <div>
+                      <p class="text-xs font-black text-slate-900">Aman Gupta</p>
+                      <p class="text-[9px] text-error font-black italic">PENDING</p>
+                    </div>
+                    <button class="w-8 h-8 rounded-lg bg-slate-200 text-slate-400 cursor-not-allowed" disabled><span class="material-symbols-outlined text-sm">download</span></button>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Notice Send -->
+          <div class="space-y-8">
+            <div class="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl space-y-6 relative overflow-hidden group">
+              <div class="absolute top-0 right-0 p-10 opacity-10 transition-transform group-hover:rotate-12 group-hover:scale-120"><span class="material-symbols-outlined text-9xl">campaign</span></div>
+              <h3 class="text-xl font-black font-headline italic text-white relative z-10">Broadcast Notice</h3>
+              <div class="space-y-4 relative z-10">
+                 <div>
+                   <input type="text" class="w-full bg-white/10 border-white/20 text-white placeholder:text-white/40" placeholder="Notice Title">
+                 </div>
+                 <div>
+                   <textarea class="w-full h-32 bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none" placeholder="Important announcement for the batch..."></textarea>
+                 </div>
+                 <div class="grid grid-cols-2 gap-3">
+                    <select class="bg-white/10 border-white/20 text-[10px] font-black text-white/70">
+                      <option>CS Dept</option>
+                      <option>All Depts</option>
+                    </select>
+                    <select class="bg-white/10 border-white/20 text-[10px] font-black text-white/70">
+                      <option>Year 2</option>
+                      <option>All Years</option>
+                    </select>
+                 </div>
+                 <button class="w-full bg-white text-slate-900 py-4 rounded-2xl font-black text-xs hover:bg-primary hover:text-white transition-all">SEND BROADCAST</button>
+              </div>
+            </div>
+
+            <!-- Sent History -->
+            <div class="bg-white p-8 rounded-[3rem] border border-outline-variant shadow-sm space-y-6">
+              <h3 class="text-sm font-black text-on-surface-variant uppercase">Recent Broadcasts</h3>
+              <div class="space-y-4">
+                 <div class="border-l-4 border-primary pl-4 py-1">
+                   <p class="text-xs font-black text-slate-900">Extra Class - Friday 4PM</p>
+                   <p class="text-[9px] text-slate-400 font-bold">CS Dept • Year 2 • 2h ago</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Timetable Section -->
+    <section id="section-timetable" class="content-section space-y-10">
+      <header class="flex justify-between items-center">
+        <div>
+          <h1 class="text-4xl font-black font-headline text-primary italic leading-tight">Academic Flow.</h1>
+          <p class="text-on-surface-variant font-bold text-xs">Dr. Rajesh Khanna • Spring Semester 2024</p>
+        </div>
+        <div class="hidden md:flex gap-4">
+          <div class="bg-white p-6 rounded-3xl border border-outline-variant shadow-sm text-center min-w-[150px]">
+            <p class="text-[10px] font-black text-on-surface-variant mb-1 uppercase">Today's Progress</p>
+            <p class="text-xl font-black text-primary font-headline italic">3 / 5 Classes</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Day Selector Pills -->
+      <div class="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+        <button id="btn-monday" onclick="switchDay('monday')" class="day-btn px-8 py-3 bg-primary text-white rounded-full text-xs font-black italic shadow-lg shadow-primary/20 transition-all">Monday</button>
+        <button id="btn-tuesday" onclick="switchDay('tuesday')" class="day-btn px-8 py-3 bg-white border border-outline-variant text-on-surface-variant rounded-full text-xs font-black italic hover:bg-slate-50 transition-all">Tuesday</button>
+        <button id="btn-wednesday" onclick="switchDay('wednesday')" class="day-btn px-8 py-3 bg-white border border-outline-variant text-on-surface-variant rounded-full text-xs font-black italic hover:bg-slate-50 transition-all">Wednesday</button>
+        <button id="btn-thursday" onclick="switchDay('thursday')" class="day-btn px-8 py-3 bg-white border border-outline-variant text-on-surface-variant rounded-full text-xs font-black italic hover:bg-slate-50 transition-all">Thursday</button>
+        <button id="btn-friday" onclick="switchDay('friday')" class="day-btn px-8 py-3 bg-white border border-outline-variant text-on-surface-variant rounded-full text-xs font-black italic hover:bg-slate-50 transition-all">Friday</button>
+      </div>
+
+      <!-- Timetable Canvas -->
+      <div class="planner-card rounded-[3rem] p-1 shadow-sm border border-outline-variant bg-white/50 relative overflow-hidden">
+        <div class="p-8 md:p-12 relative min-h-[500px]">
+          
+          <!-- MONDAY -->
+          <div id="schedule-monday" class="day-schedule space-y-6">
+            <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-pink-600 mb-1 italic">LECTURE • 09:00 - 10:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">First Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Advanced Maths • Room 101</p>
+                  <button onclick="openQRModal('First Year - Div A', 'Advanced Maths', 'Room 101', '09:00 - 10:30', 'L-101')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-pink-500 bg-white p-3 rounded-2xl shadow-sm">functions</span>
+              </div>
+            </div>
+            <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-emerald-600 mb-1 italic">TUTORIAL • 11:00 - 12:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Numerical Computing • Lab 4</p>
+                  <button onclick="openQRModal('Third Year - Div B', 'Numerical Computing', 'Lab 4', '11:00 - 12:00', 'L-102')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-emerald-600 bg-white p-3 rounded-2xl shadow-sm">psychology</span>
+              </div>
+            </div>
+            <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-blue-600 mb-1 italic">LAB SESSION • 12:30 - 02:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div C</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Applied Maths Practical • Lab 2</p>
+                  <button onclick="openQRModal('Second Year - Div C', 'Applied Maths Practical', 'Lab 2', '12:30 - 02:00', 'L-103')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-blue-600 bg-white p-3 rounded-2xl shadow-sm">account_tree</span>
+              </div>
+            </div>
+            <div class="class-block bg-purple-50/50 border-purple-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-purple-600 mb-1 italic">LECTURE • 02:30 - 03:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Operation Research • Room 302</p>
+                  <button onclick="openQRModal('Third Year - Div A', 'Operation Research', 'Room 302', '02:30 - 03:30', 'L-104')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-purple-600 bg-white p-3 rounded-2xl shadow-sm">hub</span>
+              </div>
+            </div>
+            <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-indigo-600 mb-1 italic">LAB SESSION • 03:30 - 05:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div D</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Matlab Essentials • Lab 2</p>
+                  <button onclick="openQRModal('Second Year - Div D', 'Matlab Essentials', 'Lab 2', '03:30 - 05:00', 'L-105')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-indigo-600 bg-white p-3 rounded-2xl shadow-sm">science</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TUESDAY -->
+          <div id="schedule-tuesday" class="day-schedule space-y-6 hidden">
+            <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-blue-600 mb-1 italic">LECTURE • 09:00 - 10:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">First Year - Div C</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Linear Algebra • Room 204</p>
+                  <button onclick="openQRModal('First Year - Div C', 'Linear Algebra', 'Room 204', '09:00 - 10:30', 'L-201')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-blue-600 bg-white p-3 rounded-2xl shadow-sm">hub</span>
+              </div>
+            </div>
+             <div class="class-block bg-orange-50/50 border-orange-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-orange-600 mb-1 italic">LAB SESSION • 10:30 - 12:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Matlab Essentials • Lab 5</p>
+                  <button onclick="openQRModal('Third Year - Div B', 'Matlab Essentials', 'Lab 5', '10:30 - 12:30', 'L-202')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-orange-600 bg-white p-3 rounded-2xl shadow-sm">terminal</span>
+              </div>
+            </div>
+            <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-amber-600 mb-1 italic">OFFICE HOURS • 01:30 - 02:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Faculty Cabin</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Research Help #B-402</p>
+                  <button onclick="openQRModal('Office Hours', 'Scholar Consultation', 'Cabin B-402', '01:30 - 02:30', 'O-201')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-amber-600 bg-white p-3 rounded-2xl shadow-sm">person_search</span>
+              </div>
+            </div>
+            <div class="class-block bg-rose-50/50 border-rose-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-rose-600 mb-1 italic">LECTURE • 02:30 - 03:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Probability Theory • Room 102</p>
+                  <button onclick="openQRModal('Second Year - Div A', 'Probability Theory', 'Room 102', '02:30 - 03:30', 'L-203')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-rose-600 bg-white p-3 rounded-2xl shadow-sm">neurology</span>
+              </div>
+            </div>
+            <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-emerald-600 mb-1 italic">PRACTICAL • 03:30 - 05:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div C</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Optimization Workshop • Lab 1</p>
+                  <button onclick="openQRModal('Third Year - Div C', 'Optimization Workshop', 'Lab 1', '03:30 - 05:00', 'L-204')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-emerald-600 bg-white p-3 rounded-2xl shadow-sm">school</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- WEDNESDAY -->
+          <div id="schedule-wednesday" class="day-schedule space-y-6 hidden">
+            <div class="class-block bg-purple-50/50 border-purple-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-purple-600 mb-1 italic">LECTURE • 09:00 - 10:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Vector Calculus • Room 402</p>
+                  <button onclick="openQRModal('Third Year - Div A', 'Vector Calculus', 'Room 402', '09:00 - 10:30', 'L-301')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-purple-600 bg-white p-3 rounded-2xl shadow-sm">bolt</span>
+              </div>
+            </div>
+             <div class="class-block bg-pink-50/50 border-pink-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-pink-600 mb-1 italic">LAB SESSION • 10:30 - 12:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Fourier Analysis Lab • Lab 3</p>
+                  <button onclick="openQRModal('Second Year - Div B', 'Fourier Analysis Lab', 'Lab 3', '10:30 - 12:30', 'L-302')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-pink-600 bg-white p-3 rounded-2xl shadow-sm">memory</span>
+              </div>
+            </div>
+            <div class="py-4 bg-slate-50/80 rounded-full px-10 flex justify-between items-center italic border border-slate-100">
+               <span class="text-[10px] font-black text-on-surface-variant uppercase">Faculty Department Lunch • 12:30 - 01:30</span>
+               <span class="material-symbols-outlined text-on-surface-variant text-sm">restaurant</span>
+            </div>
+            <div class="class-block bg-rose-50/50 border-rose-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-rose-600 mb-1 italic">SEMINAR • 02:00 - 03:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Final Year - All Divs</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Research Methodology</p>
+                  <button onclick="openQRModal('Final Year - All Divs', 'Research Methodology', 'Main Auditorium', '02:00 - 03:00', 'L-305')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-rose-600 bg-white p-3 rounded-2xl shadow-sm">auto_awesome</span>
+              </div>
+            </div>
+            <div class="class-block bg-cyan-50/50 border-cyan-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-cyan-600 mb-1 italic">LECTURE • 03:00 - 04:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Calculus Essentials • Room 201</p>
+                  <button onclick="openQRModal('Third Year - Div B', 'Calculus Essentials', 'Room 201', '03:00 - 04:00', 'L-303')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-cyan-500 bg-white p-3 rounded-2xl shadow-sm">neurology</span>
+              </div>
+            </div>
+            <div class="class-block bg-lime-50/50 border-lime-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-lime-600 mb-1 italic">PRACTICAL • 04:00 - 05:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div C</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Applied Maths Practical • Lab 4</p>
+                  <button onclick="openQRModal('Second Year - Div C', 'Applied Maths Practical', 'Lab 4', '04:00 - 05:30', 'L-304')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-lime-600 bg-white p-3 rounded-2xl shadow-sm">calculate</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- THURSDAY -->
+          <div id="schedule-thursday" class="day-schedule space-y-6 hidden">
+             <div class="class-block bg-teal-50/50 border-teal-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-teal-600 mb-1 italic">LAB SESSION • 09:00 - 11:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div D</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Numerical Computing Lab • Lab 2</p>
+                  <button onclick="openQRModal('Second Year - Div D', 'Numerical Computing Lab', 'Lab 2', '09:00 - 11:00', 'L-401')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-teal-600 bg-white p-3 rounded-2xl shadow-sm">science</span>
+              </div>
+            </div>
+             <div class="class-block bg-amber-50/50 border-amber-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-amber-600 mb-1 italic">LECTURE • 11:15 - 12:15</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Applied Mathematics • Room 305</p>
+                  <button onclick="openQRModal('Second Year - Div A', 'Applied Mathematics', 'Room 305', '11:15 - 12:15', 'L-402')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-amber-600 bg-white p-3 rounded-2xl shadow-sm">database</span>
+              </div>
+            </div>
+            <div class="class-block bg-orange-50/50 border-orange-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-orange-600 mb-1 italic">LECTURE • 01:30 - 02:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">First Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Advanced Maths • Room 101</p>
+                  <button onclick="openQRModal('First Year - Div A', 'Advanced Maths', 'Room 101', '09:00 - 10:30', 'L-101')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-orange-500 bg-white p-3 rounded-2xl shadow-sm">functions</span>
+              </div>
+            </div>
+            <div class="class-block bg-indigo-50/50 border-indigo-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-indigo-600 mb-1 italic">LAB SESSION • 02:45 - 04:15</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Matlab Simulation • Lab 6</p>
+                  <button onclick="openQRModal('Third Year - Div B', 'Matlab Simulation', 'Lab 6', '02:45 - 04:15', 'L-404')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-indigo-600 bg-white p-3 rounded-2xl shadow-sm">code</span>
+              </div>
+            </div>
+            <div class="class-block bg-emerald-50/50 border-emerald-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-emerald-600 mb-1 italic">MEETING • 04:15 - 05:15</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">HOD Sync</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Faculty Meeting Room</p>
+                  <button onclick="openQRModal('HOD Sync', 'Faculty', 'Meeting Room', '04:15 - 05:15', 'M-401')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-emerald-600 bg-white p-3 rounded-2xl shadow-sm">sync</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FRIDAY -->
+          <div id="schedule-friday" class="day-schedule space-y-6 hidden">
+            <div class="class-block bg-blue-50/50 border-blue-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-blue-600 mb-1 italic">LECTURE • 09:00 - 10:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div A</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Probability Theory • Room 405</p>
+                  <button onclick="openQRModal('Third Year - Div A', 'Probability Theory', 'Room 405', '09:00 - 10:30', 'L-501')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-blue-600 bg-white p-3 rounded-2xl shadow-sm">cloud</span>
+              </div>
+            </div>
+            <div class="class-block bg-cyan-50/50 border-cyan-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-cyan-600 mb-1 italic">RESEARCH • 10:30 - 12:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Self Study</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Faculty Library</p>
+                  <button onclick="openQRModal('Self Study', 'Faculty', 'Library', '10:30 - 12:30', 'R-501')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-cyan-600 bg-white p-3 rounded-2xl shadow-sm">menu_book</span>
+              </div>
+            </div>
+             <div class="class-block bg-orange-50/50 border-orange-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-orange-600 mb-1 italic">LAB SESSION • 01:30 - 03:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Second Year - Div B</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Numerical Practical • Lab 2</p>
+                  <button onclick="openQRModal('Second Year - Div B', 'Numerical Practical', 'Lab 2', '01:30 - 03:00', 'L-502')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-orange-600 bg-white p-3 rounded-2xl shadow-sm">smartphone</span>
+              </div>
+            </div>
+            <div class="class-block bg-lime-50/50 border-lime-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-lime-600 mb-1 italic">MEETING • 03:00 - 04:30</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Department Sync</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Conference Hall A</p>
+                  <button onclick="openQRModal('Department Sync', 'Faculty', 'Hall A', '03:00 - 04:30', 'M-501')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-lime-600 bg-white p-3 rounded-2xl shadow-sm">groups</span>
+              </div>
+            </div>
+            <div class="class-block bg-purple-50/50 border-purple-500 shadow-sm hover:shadow-md">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-[10px] font-black text-purple-600 mb-1 italic">LAB SESSION • 04:30 - 06:00</p>
+                  <h3 class="text-2xl font-black font-headline italic text-on-surface">Third Year - Div C</h3>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Applied Maths Prep • Lab 3</p>
+                  <button onclick="openQRModal('Third Year - Div C', 'Applied Maths Prep', 'Lab 3', '04:30 - 06:00', 'L-503')" class="mt-4 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black italic transition-all border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span> + QR Attendance
+                  </button>
+                </div>
+                <span class="material-symbols-outlined text-purple-600 bg-white p-3 rounded-2xl shadow-sm">security</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Canteen Section (Mirrored from Student Portal) -->
+    <section id="section-canteen" class="content-section space-y-12">
+      <header class="flex justify-between items-end">
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full border border-primary/20 leading-none py-1.5">OPEN NOW</span>
+            <span class="text-xs font-bold text-on-surface-variant">• VIP Faculty Lane Active</span>
+          </div>
+          <h1 class="text-5xl font-black font-headline text-on-surface leading-tight">Fresh, Healthy & <br /><span class="text-primary italic">Delicious.</span></h1>
+          <p class="text-on-surface-variant font-medium max-w-sm">Enjoy premium dining services with dedicated faculty service windows and priority ordering.</p>
+        </div>
+        <div class="flex gap-4">
+          <button onclick="showToast('Displaying Season Specials...')" class="bg-primary text-white px-8 py-3 rounded-full font-bold shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all">Daily Specials</button>
+        </div>
+      </header>
+
+      <!-- Today's Specials -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Food Card 1 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100 overflow-hidden">
+            <img class="w-full h-full object-cover" src="assets/paneer-tikka.png" alt="Paneer Tikka Platter" />
+            <div class="absolute top-4 left-4">
+              <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-primary shadow-sm">FACULTY CHOICE</span>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Paneer Tikka Platter</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Classic Indian tandoor specialty</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹180</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">energy_savings_leaf</span>
+                <span class="text-xs font-bold text-on-surface-variant">420 kcal</span>
+              </div>
+              <button onclick="showToast('Ordered to Faculty Lounge')" class="flex items-center gap-2 text-xs font-black text-primary hover:underline">Priority Delivery <span class="material-symbols-outlined text-sm">bolt</span></button>
+            </div>
+          </div>
+        </div>
+        <!-- Food Card 2 -->
+        <div class="food-card overflow-hidden">
+          <div class="h-56 relative bg-slate-100 overflow-hidden">
+             <img class="w-full h-full object-cover" src="assets/chicken-starters.png" alt="Chicken Starters" />
+             <div class="absolute top-4 left-4">
+               <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-red-600 shadow-sm italic font-black">CHEF'S SPECIAL</span>
+             </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Crispy Chicken Hub</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Fried to perfection with fresh lemon</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹120</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">nutrition</span>
+                <span class="text-xs font-bold text-on-surface-variant">450 kcal</span>
+              </div>
+              <button onclick="showToast('Chicken Reserved for 1:30 PM')" class="flex items-center gap-2 text-xs font-black text-primary hover:underline">Priority Order <span class="material-symbols-outlined text-sm">event</span></button>
+            </div>
+          </div>
+        </div>
+        <!-- Food Card 3 -->
+        <div class="food-card overflow-hidden">
+           <div class="h-56 relative bg-slate-100 overflow-hidden">
+             <img class="w-full h-full object-cover" src="assets/chinese-food.png" alt="Hakka Noodles" />
+             <div class="absolute top-4 left-4">
+               <span class="px-3 py-1 bg-white/90 backdrop-blur-md text-[10px] font-black rounded-full text-sky-600 shadow-sm uppercase font-black">Oriental Blend</span>
+             </div>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold font-headline mb-1">Hakka Combo</h3>
+                <p class="text-xs text-on-surface-variant font-medium">Authentic Chinese wok-tossed specialty</p>
+              </div>
+              <span class="px-3 py-1.5 price-badge rounded-lg text-sm">₹100</span>
+            </div>
+            <div class="flex items-center justify-between pt-6 border-t border-outline-variant/50">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-sm">local_cafe</span>
+                <span class="text-xs font-bold text-on-surface-variant">510 kcal</span>
+              </div>
+              <button onclick="showToast('Combo sent to Cabin #B-402')" class="flex items-center gap-2 text-xs font-black text-primary hover:underline">Send to Cabin <span class="material-symbols-outlined text-sm">room_service</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Menu Navigation -->
+      <section class="space-y-8">
+        <div class="flex items-end justify-between border-b-2 border-outline-variant">
+          <div class="flex gap-2 overflow-x-auto pb-0 no-scrollbar" id="menu-tabs">
+            <button onclick="switchMenuTab('classic', this)" class="menu-tab active-tab pb-5 px-6 text-base font-black text-primary border-b-4 border-primary leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+              <span class="material-symbols-outlined text-[20px]">menu_book</span> Classic Menu
+            </button>
+            <button onclick="switchMenuTab('breakfast', this)" class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+              <span class="material-symbols-outlined text-[20px]">breakfast_dining</span> Breakfast
+            </button>
+            <button onclick="switchMenuTab('snacks', this)" class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+              <span class="material-symbols-outlined text-[20px]">lunch_dining</span> Snacks
+            </button>
+            <button onclick="switchMenuTab('beverages', this)" class="menu-tab pb-5 px-6 text-base font-bold text-on-surface-variant hover:text-on-surface border-b-4 border-transparent leading-none whitespace-nowrap flex items-center gap-2 transition-all">
+              <span class="material-symbols-outlined text-[20px]">local_cafe</span> Beverages
+            </button>
+          </div>
+          <div class="pb-5">
+             <span id="item-count" class="text-sm font-bold text-on-surface-variant italic underline decoration-primary/20">Authorized Dining Access</span>
+          </div>
+        </div>
+
+        <!-- Classic Menu Panel -->
+        <div id="panel-classic" class="menu-panel grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+          <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group border border-transparent hover:border-outline-variant">
+            <div class="flex items-center gap-5">
+              <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=100" alt="Veggie Bowl" />
+              </div>
+              <div>
+                <h4 class="font-bold text-lg leading-tight mb-1">Executive Veggie Bowl</h4>
+                <p class="text-xs text-on-surface-variant font-medium">Rice base with premium seasonal sabzi</p>
+              </div>
+            </div>
+            <div class="text-right shrink-0 ml-4">
+              <p class="font-black text-primary text-xl font-headline">₹90</p>
+              <button onclick="showToast('Bowl added to order')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ORDER+</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-4 hover:bg-white rounded-xl transition-all group border border-transparent hover:border-outline-variant">
+            <div class="flex items-center gap-5">
+              <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1512152272829-e3139592d56f?auto=format&fit=crop&q=80&w=100" alt="Veg Burger" />
+              </div>
+              <div>
+                <h4 class="font-bold text-lg leading-tight mb-1">Gourmet Paneer Burger</h4>
+                <p class="text-xs text-on-surface-variant font-medium">Fresh grilled paneer with pesto</p>
+              </div>
+            </div>
+            <div class="text-right shrink-0 ml-4">
+              <p class="font-black text-primary text-xl font-headline">₹110</p>
+              <button onclick="showToast('Burger added!')" class="text-[10px] font-black text-on-surface-variant group-hover:text-primary transition-colors">ORDER+</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-breakfast" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+           <p class="col-span-full p-10 text-center italic font-bold text-slate-400">Breakfast synchronized with Daily Prep. Available 08:00 - 11:00 AM.</p>
+        </div>
+        <div id="panel-snacks" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+           <p class="col-span-full p-10 text-center italic font-bold text-slate-400">Evening snacks available post 04:00 PM.</p>
+        </div>
+        <div id="panel-beverages" class="menu-panel hidden grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+           <p class="col-span-full p-10 text-center italic font-bold text-slate-400">Beverage hub active 24/7 for faculty.</p>
+        </div>
+      </section>
+    </section>
+
+
+
+  </main>
+
+  <!-- QR Attendance Modal -->
+  <div id="qr-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
+    <div id="qr-modal-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300 opacity-0"></div>
+    <div id="qr-modal-content" class="relative bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl scale-90 opacity-0 transition-all duration-300">
+      <div class="text-center space-y-6">
+        <div class="space-y-2">
+          <p id="qr-lecture-id" class="text-[10px] font-black text-primary italic uppercase tracking-widest leading-none">Lecture ID: --</p>
+          <h2 id="qr-subject" class="text-3xl font-black font-headline italic text-slate-900">Advanced Maths</h2>
+          <p id="qr-details" class="text-xs font-bold text-on-surface-variant">First Year - Div A • Room 101</p>
+        </div>
+
+        <!-- QR Code Placeholder -->
+        <div class="flex justify-center p-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-outline-variant relative group">
+           <div id="qrcode" class="bg-white p-4 rounded-2xl shadow-sm transition-transform group-hover:scale-105"></div>
+           <div id="qr-status-indicator" class="absolute top-4 right-4 flex items-center gap-2 hidden">
+             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+             <span class="text-[8px] font-black text-green-600">LIVE</span>
+           </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <button onclick="startAttendance()" id="start-btn" class="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-sm shadow-xl shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all">Start Attendance</button>
+            <button onclick="stopAttendance()" id="stop-btn" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl hover:scale-[1.02] active:scale-95 transition-all hidden">Stop Attendance</button>
+          </div>
+          <button onclick="closeQRModal()" class="w-full py-4 text-on-surface-variant font-bold text-xs hover:text-on-surface transition-colors italic underline decoration-primary/20">Close Modal</button>
+        </div>
+
+        <div class="pt-6 border-t border-outline-variant">
+           <a href="attendance.html" class="inline-flex items-center gap-2 text-[10px] font-black text-primary hover:underline">
+             View Live Registry <span class="material-symbols-outlined text-sm">arrow_outward</span>
+           </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000/api";
+    let userData = null;
+
+    async function initDashboard() {
+        const token = localStorage.getItem('access_token');
+        const rawUserData = localStorage.getItem('user_data');
+        
+        if (!token || !rawUserData) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        try {
+            userData = JSON.parse(rawUserData);
+            updateUIWithProfile();
+            // Other fetches...
+        } catch (e) {
+            console.error("Initialization error:", e);
+        }
+    }
+
+    function updateUIWithProfile() {
+        if (!userData) return;
+        
+        // Update Name & Designation
+        const nameEls = document.querySelectorAll('.font-headline.italic.text-slate-800');
+        nameEls.forEach(el => { 
+            if (el.textContent === "Dr. Rajesh Khanna") el.textContent = userData.full_name;
+        });
+        
+        const headerSub = document.querySelector('header p.text-on-surface-variant');
+        if (headerSub && headerSub.textContent.includes("Dr. Rajesh Khanna")) {
+            headerSub.textContent = `${userData.full_name} • Faculty Dashboard`;
+        }
+
+        const emailEls = document.querySelectorAll('.text-sm.font-black.text-slate-800');
+        emailEls.forEach(el => {
+            if (el.textContent === "r.khanna@campus360.edu") el.textContent = userData.email;
+        });
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    window.onload = () => {
+        initDashboard();
+    };
+
+    /**
+     * Faculty Dashboard - QR Attendance Logic
+     * Campus 360 - Smart Campus Management System
+     */
+
+    let currentSessionId = null;
+    let attendanceTimer = null;
+
+    /**
+     * Opens the QR Modal and generates a lecture-specific code via backend
+     */
+    async function openQRModal(group, subject, room, time, subjectCode) {
+        const modal = document.getElementById('qr-modal');
+        const overlay = document.getElementById('qr-modal-overlay');
+        const content = document.getElementById('qr-modal-content');
+        const qrContainer = document.getElementById('qrcode');
+
+        document.getElementById('qr-subject').innerText = subject;
+        document.getElementById('qr-details').innerText = `${group} • ${room} • ${time}`;
+        document.getElementById('qr-lecture-id').innerText = `Subject: ${subjectCode}`;
+        
+        qrContainer.innerHTML = '<div class="animate-spin material-symbols-outlined text-primary text-4xl">sync</div>';
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            content.classList.remove('opacity-0', 'scale-90');
+        }, 10);
+
+        try {
+            // Call backend to generate QR
+            // Note: We need a valid session_id from timetable, but for now we simulate with parameters
+            const response = await fetch(`${API_BASE}/attendance/generate-qr/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({
+                    session_id: "75380590-449e-4171-897c-3f26194b5952", // Hardcoded for demo/testing if not available
+                    subject_id: "37e634d7-d9ba-426d-9e39-2a440bc67de0" // Hardcoded for demo
+                })
+            });
+
+            const data = await response.json();
+            if (data.qr_image_url) {
+                qrContainer.innerHTML = `<img src="${data.qr_image_url}" class="w-48 h-48 rounded-2xl shadow-sm transition-transform group-hover:scale-105" />`;
+                showToast("QR Code Generated successfully");
+            } else {
+                qrContainer.innerHTML = '<p class="text-error font-bold text-xs">Failed to load QR</p>';
+            }
+        } catch (e) {
+            console.error("QR Generation error:", e);
+            qrContainer.innerHTML = '<p class="text-error font-bold text-xs">API Error</p>';
+        }
+    }
+
+    /**
+     * Closes the QR Modal
+     */
+    function closeQRModal() {
+        const modal = document.getElementById('qr-modal');
+        const overlay = document.getElementById('qr-modal-overlay');
+        const content = document.getElementById('qr-modal-content');
+
+        overlay.classList.add('opacity-0');
+        content.classList.add('opacity-0', 'scale-90');
+        
+        setTimeout(() => {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            stopAttendance(); 
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+
+    /**
+     * Starts live attendance mode
+     */
+    function startAttendance() {
+        document.getElementById('start-btn').classList.add('hidden');
+        document.getElementById('stop-btn').classList.remove('hidden');
+        document.getElementById('qr-status-indicator').classList.remove('hidden');
+        
+        showToast("Attendance Session Started");
+        
+        attendanceTimer = setTimeout(() => {
+            stopAttendance();
+        }, 1800000); 
+    }
+
+    /**
+     * Stops live attendance mode
+     */
+    function stopAttendance() {
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const indicator = document.getElementById('qr-status-indicator');
+        
+        if (startBtn) startBtn.classList.remove('hidden');
+        if (stopBtn) stopBtn.classList.add('hidden');
+        if (indicator) indicator.classList.add('hidden');
+        
+        if(attendanceTimer) clearTimeout(attendanceTimer);
+        // showToast("Attendance Session Stopped");
+    }
+
+    /**
+     * UI Toast Utility 
+     */
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-message');
+        if (!toast || !toastMsg) return;
+        
+        toastMsg.innerText = msg;
+        toast.classList.remove('opacity-0', 'translate-y-10');
+        
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-10');
+        }, 3000);
+    }
+  </script>
+
+  <!-- Toast Component -->
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3">
+    <span class="material-symbols-outlined text-primary">auto_awesome</span>
+    <p id="toast-message" class="text-xs font-black italic"></p>
+  </div>
+
+  <script>
+    /**
+     * Faculty Dashboard Interactions - Campus 360
+     */
+
+    // --- SECTION SWITCHING ---
+    function switchSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      // Show target section
+      const targetSection = document.getElementById(`section-${sectionId}`);
+      if (targetSection) {
+        targetSection.classList.add('active');
+      }
+
+      // Update Section Title in Header
+      const sectionTitles = {
+        'dashboard': 'Faculty Dashboard',
+        'gc-system': 'GC Management System',
+        'timetable': 'Faculty Timetable',
+        'canteen': 'Smart Canteen'
+      };
+      document.getElementById('section-title').textContent = sectionTitles[sectionId] || 'Portal';
+
+      // Update Nav Links UI
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+        link.classList.add('text-on-surface-variant', 'hover:bg-slate-50');
+        // Set material symbol FILL settings
+        const icon = link.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+      });
+
+      const activeLink = document.getElementById(`nav-${sectionId}`);
+      if (activeLink) {
+        activeLink.classList.remove('text-on-surface-variant', 'hover:bg-slate-50');
+        activeLink.classList.add('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+        const icon = activeLink.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+      }
+
+      // Close sidebar on mobile after selection
+      if (window.innerWidth < 1024) {
+        toggleSidebar(false);
+      }
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- SIDEBAR TOGGLE (Mobile) ---
+    function toggleSidebar(forceState) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-overlay');
+      
+      const isOpening = forceState !== undefined ? forceState : sidebar.classList.contains('-translate-x-full');
+
+      if (isOpening) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+        setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.remove('opacity-100');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+    }
+
+    // --- FACULTY ID CARD EXPAND LOGIC ---
+    let isCardExpanded = false;
+
+    function toggleCardExpand() {
+      const card = document.getElementById('faculty-card');
+      const backdrop = document.getElementById('modal-backdrop-global');
+      const expandedContent = document.getElementById('card-expanded');
+      const closeBtn = document.getElementById('card-close-btn');
+      const tapHint = document.getElementById('card-tap-hint');
+      const photo = document.getElementById('card-photo');
+
+      if (!isCardExpanded) {
+        // Expand
+        isCardExpanded = true;
+        card.classList.add('fixed-center');
+        backdrop.classList.add('active');
+        expandedContent.classList.remove('hidden');
+        setTimeout(() => {
+          expandedContent.classList.add('opacity-100');
+        }, 100);
+        closeBtn.classList.remove('hidden');
+        tapHint.classList.add('hidden');
+        photo.querySelector('.w-44').classList.replace('w-44', 'w-32');
+        photo.querySelector('.h-44').classList.replace('h-44', 'h-32');
+      } else {
+        // Close function
+        closeCard();
+      }
+    }
+
+    function closeCard() {
+      const card = document.getElementById('faculty-card');
+      const backdrop = document.getElementById('modal-backdrop-global');
+      const expandedContent = document.getElementById('card-expanded');
+      const closeBtn = document.getElementById('card-close-btn');
+      const tapHint = document.getElementById('card-tap-hint');
+      const photo = document.getElementById('card-photo');
+
+      if (!isCardExpanded) return;
+
+      isCardExpanded = false;
+      card.classList.remove('fixed-center');
+      backdrop.classList.remove('active');
+      expandedContent.classList.remove('opacity-100');
+      setTimeout(() => {
+        expandedContent.classList.add('hidden');
+      }, 300);
+      closeBtn.classList.add('hidden');
+      tapHint.classList.remove('hidden');
+      photo.querySelector('.w-32').classList.replace('w-32', 'w-44');
+      photo.querySelector('.h-32').classList.replace('h-32', 'h-44');
+    }
+
+    // Close card on backdrop click
+    document.getElementById('modal-backdrop-global').onclick = closeCard;
+    document.getElementById('card-close-btn').onclick = (e) => {
+      e.stopPropagation();
+      closeCard();
+    };
+
+    // --- GC SYSTEM NAVIGATION ---
+    function openYear(yearName) {
+      const yearTitle = yearName.charAt(0).toUpperCase() + yearName.slice(1) + " Year";
+      document.getElementById('active-year-title').textContent = yearTitle;
+      document.getElementById('gc-year-grid').classList.add('hidden');
+      document.getElementById('gc-subject-view').classList.remove('hidden');
+    }
+
+    function backToYears() {
+      document.getElementById('gc-year-grid').classList.remove('hidden');
+      document.getElementById('gc-subject-view').classList.add('hidden');
+    }
+
+    function openGCBoard(subjectName) {
+      document.getElementById('active-subject-header').textContent = subjectName;
+      document.getElementById('gc-subject-view').classList.add('hidden');
+      document.getElementById('gc-board-view').classList.remove('hidden');
+    }
+
+    function backToSubjects() {
+      document.getElementById('gc-subject-view').classList.remove('hidden');
+      document.getElementById('gc-board-view').classList.add('hidden');
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Default day for timetable
+        if (document.getElementById('btn-monday')) {
+          switchDay('monday');
+        }
+    });
+
+    // --- TIMETABLE LOGIC ---
+    function switchDay(day) {
+      // Buttons reset
+      document.querySelectorAll('.day-btn').forEach(btn => {
+        btn.classList.remove('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+        btn.classList.add('bg-white', 'border', 'border-outline-variant', 'text-on-surface-variant');
+      });
+      
+      const clickedBtn = document.getElementById('btn-' + day);
+      if (clickedBtn) {
+        clickedBtn.classList.remove('bg-white', 'border', 'border-outline-variant', 'text-on-surface-variant');
+        clickedBtn.classList.add('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/20');
+      }
+
+      // Schedules reset
+      document.querySelectorAll('.day-schedule').forEach(sch => sch.classList.add('hidden'));
+      const activeSch = document.getElementById('schedule-' + day);
+      if (activeSch) activeSch.classList.remove('hidden');
+    }
+
+    // --- CANTEEN LOGIC ---
+    function switchMenuTab(tab, btn) {
+      // Hide all panels
+      document.querySelectorAll('.menu-panel').forEach(p => p.classList.add('hidden'));
+      // Reset all tab buttons
+      document.querySelectorAll('.menu-tab').forEach(t => {
+        t.classList.remove('text-primary', 'border-primary', 'font-black', 'active-tab');
+        t.classList.add('text-on-surface-variant', 'border-transparent', 'font-bold');
+      });
+      // Show selected panel
+      const panel = document.getElementById('panel-' + tab);
+      if (panel) panel.classList.remove('hidden');
+      // Activate clicked tab
+      btn.classList.add('text-primary', 'border-primary', 'font-black', 'active-tab');
+      btn.classList.remove('text-on-surface-variant', 'border-transparent', 'font-bold');
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      if (!toast || !toastMsg) return;
+
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+      
+      setTimeout(() => {
+        toast.classList.remove('toast-active');
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>

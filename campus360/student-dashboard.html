@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Student Dashboard | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  
+  <!-- Supabase Library & Config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    // 🛡️ Global Auth Guard
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      return session.user;
+    }
+  </script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#004ac6",
+            "secondary": "#fb923c",
+            "success": "#22c55e",
+            "warning": "#eab308",
+            "error": "#ef4444",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .achievement-glow {
+      box-shadow: 0 0 40px -10px rgba(0, 74, 198, 0.3);
+    }
+
+    .metric-ring {
+      transition: stroke-dashoffset 1s ease-out;
+    }
+
+    .hover-lift {
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-8px);
+    }
+
+    /* Global Interaction Components */
+    #ai-sidebar {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: -40px 0 80px -20px rgba(15, 23, 42, 0.15);
+    }
+
+    #ai-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Notebook Style Styles */
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      /* Enhanced for 'dirt' feel */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .marker-highlight {
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+    }
+
+    .marker-highlight::after {
+      content: '';
+      position: absolute;
+      left: -5%;
+      bottom: -2px;
+      width: 110%;
+      height: 12px;
+      background: rgba(37, 99, 235, 0.15);
+      /* Soft blue for notebook feel */
+      z-index: -1;
+      transform: skewX(-15deg) rotate(-1deg);
+      border-radius: 4px;
+    }
+
+    .sticky-note {
+      background: #fef08a;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
+      transform: rotate(-1.5deg);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .hand-drawn-circle {
+      position: relative;
+    }
+
+    .hand-drawn-circle::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      border: 3px solid rgba(0, 74, 198, 0.1);
+      border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+      transform: rotate(-3deg);
+      z-index: -1;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+
+    .scan-line {
+      animation: scan 3s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+
+      0%,
+      100% {
+        top: 10%;
+        opacity: 0.5;
+      }
+
+      50% {
+        top: 86%;
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+  <div class="paper-grain"></div>
+
+  <!-- Sidebar -->
+  <!-- Mobile Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div
+          class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-sm">school</span>
+        </div>
+        <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold">Student Portal</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="courses.html">
+        <span class="material-symbols-outlined">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="canteen.html">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="occupancy.html">
+        <span class="material-symbols-outlined">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="lost-found.html">
+        <span class="material-symbols-outlined">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="settings.html">
+        <span class="material-symbols-outlined">settings</span>Settings
+      </a>
+      <a id="logout-link" onclick="logout()" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline cursor-pointer">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+
+    <!-- Relocated Sticky Note -->
+    <div class="mt-auto pt-6">
+      <div class="sticky-note p-5 flex flex-col gap-2 relative z-10 border border-yellow-200/50">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-10 h-3 bg-white/40 shadow-sm"></div>
+        <div class="flex items-center gap-2 text-yellow-800 text-[9px] font-black italic opacity-60">
+          <span class="material-symbols-outlined text-[12px]">push_pin</span> Daily Reminder
+        </div>
+        <p class="text-[11px] font-bold leading-snug text-yellow-900/90 italic">"Return the Library copy of 'Modern
+          Algos' by Friday!"</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div
+    class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+        <span class="material-symbols-outlined text-sm font-black">school</span>
+      </div>
+      <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+    </div>
+    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+  </div>
+
+  <main
+    class="lg:ml-72 flex-1 p-4 md:p-8 space-y-10 max-w-7xl mx-auto max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+    <!-- Dynamic Header -->
+    <header
+      class="flex justify-between items-center bg-white/20 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/30">
+      <div class="relative group">
+        <h1 class="text-5xl font-black font-headline text-on-surface leading-tight">
+          Good morning,<br /><span id="user-greeting-name" class="text-primary marker-highlight">Tejas!</span>
+        </h1>
+        <p class="text-on-surface-variant font-medium mt-3 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-success animate-pulse"></span>
+          Term S4 • 2 sessions today • Football trials at 4 PM
+        </p>
+      </div>
+
+      <div class="flex gap-4">
+        <div
+          class="bg-white p-5 rounded-[30px_10px_25px_15px] border border-outline-variant shadow-sm text-center min-w-[130px] hand-drawn-circle">
+          <p class="text-[10px] font-black text-on-surface-variant mb-1">GPA</p>
+          <p id="stat-gpa" class="text-3xl font-black text-primary font-headline italic">--</p>
+        </div>
+        <div
+          class="bg-white p-5 rounded-[15px_35px_10px_20px] border border-outline-variant shadow-sm text-center min-w-[130px]">
+          <p class="text-[10px] font-black text-on-surface-variant mb-1">Rank</p>
+          <p id="stat-rank" class="text-3xl font-black text-secondary font-headline italic">--</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bento Grid -->
+    <div class="grid grid-cols-12 gap-8">
+
+      <!-- Profile & Achievements -->
+      <section class="col-span-12 lg:col-span-4 space-y-8">
+        <!-- Profile Card Wrapper -->
+        <div class="block w-full">
+          <div id="profile-card" onclick="if(!this.classList.contains('fixed')) openProfileModal(this)"
+            class="glass-card rounded-[2.5rem] p-10 flex flex-col items-center text-center hover-lift achievement-glow cursor-pointer transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 origin-center bg-white border border-outline-variant overflow-hidden">
+
+            <!-- Expanded Close Button -->
+            <button id="profile-close-btn" onclick="event.stopPropagation(); closeProfileModal();"
+              class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full flex items-center justify-center opacity-0 hidden transition-opacity z-50">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <!-- Compact View Only -->
+            <div id="profile-preview"
+              class="flex flex-col items-center transition-all duration-300 w-full opacity-100 space-y-6">
+              <div class="relative pointer-events-none">
+                <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse"></div>
+                <div
+                  class="w-40 h-40 rounded-full p-2 bg-gradient-to-tr from-primary via-white to-secondary relative z-10 transition-transform duration-500"
+                  id="profile-img-container">
+                  <img id="profile-avatar" alt="Tejas Dubey"
+                    class="w-full h-full rounded-full object-cover border-4 border-white shadow-2xl"
+                    src="assets/default_student_avatar.png" />
+                </div>
+                <div
+                  class="absolute -bottom-2 -right-2 bg-success text-white w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-lg z-20 transition-all"
+                  id="profile-badge">
+                  <span class="material-symbols-outlined text-sm font-black">check</span>
+                </div>
+              </div>
+              <div>
+                <h2 id="profile-full-name" class="text-2xl font-black font-headline italic">Tejas Dubey</h2>
+                <p id="profile-dept-year" class="text-on-surface-variant font-bold text-xs mt-1">CS Engineering • Year 2</p>
+              </div>
+              <div class="flex flex-wrap justify-center gap-2">
+                <span
+                  class="px-3 py-1 bg-primary/5 text-primary text-[10px] font-black rounded-full border border-primary/10 italic">DEAN'S
+                  LIST</span>
+                <span
+                  class="px-3 py-1 bg-secondary/5 text-secondary text-[10px] font-black rounded-full border border-secondary/10 italic">TOP
+                  5%</span>
+                <span
+                  class="px-3 py-1 bg-success/5 text-success text-[10px] font-black rounded-full border border-success/10 italic">100%
+                  ATTENDANCE</span>
+              </div>
+              <p
+                class="text-[10px] text-primary font-bold italic mt-4 opacity-70 bg-primary/5 px-4 py-1.5 rounded-full inline-flex items-center justify-center border border-primary/10">
+                Tap to view full profile</p>
+            </div>
+
+            <!-- Expanded Details View -->
+            <div id="profile-expanded-content"
+              class="hidden opacity-0 flex-col w-full h-full text-left transition-opacity duration-300 overflow-y-auto custom-scrollbar px-2 md:px-6 pt-4 space-y-8 pb-10">
+
+              <!-- Top Row: Photo & Main Info -->
+              <div
+                class="flex flex-col md:flex-row items-center md:items-start gap-8 border-b border-outline-variant pb-8">
+                <div
+                  class="w-32 h-32 md:w-48 md:h-48 rounded-3xl p-1 bg-gradient-to-tr from-primary via-white to-secondary shrink-0 shadow-lg mt-2">
+                  <img alt="Tejas Dubey" class="w-full h-full rounded-[1.4rem] object-cover border-4 border-white"
+                    src="assets/default_student_avatar.png" />
+                </div>
+                <div class="flex-1 space-y-4 w-full">
+                  <div>
+                    <h2 class="text-4xl font-black font-headline italic text-slate-800">Tejas Dubey</h2>
+                    <p class="text-primary font-bold">B.Tech Computer Science Engineering</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2 pt-2">
+                    <div class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                      <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Student ID</p>
+                      <p class="text-sm font-black text-slate-700">CS-2024-042</p>
+                    </div>
+                    <div class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                      <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Roll No</p>
+                      <p class="text-sm font-black text-slate-700">42</p>
+                    </div>
+                    <div class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                      <p class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Semester</p>
+                      <p class="text-sm font-black text-slate-700">4 (Year 2)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Info Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Contact -->
+                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-wider mb-2">Contact Info</h3>
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <span class="material-symbols-outlined text-sm">mail</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">University Email</p>
+                      <p class="text-sm font-black text-slate-800">tejas.d@campus.edu</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <span class="material-symbols-outlined text-sm">call</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">Phone</p>
+                      <p class="text-sm font-black text-slate-800">+91 98765 43210</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status -->
+                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                  <h3 class="text-sm font-black text-slate-400 uppercase tracking-wider mb-2">Academic Status</h3>
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success shrink-0">
+                      <span class="material-symbols-outlined text-sm">event_available</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">Attendance</p>
+                      <p class="text-sm font-black text-success">93.3% (Excellent)</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                      <span class="material-symbols-outlined text-sm">payments</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">Fees Status</p>
+                      <p class="text-sm font-black text-emerald-600">Cleared for Term S4</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Address / Emergency -->
+              <div class="bg-white p-6 rounded-3xl border border-outline-variant space-y-4 shadow-sm">
+                <h3 class="text-sm font-black text-slate-400 uppercase tracking-wider mb-2">Residential & Emergency</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div class="flex items-start gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                      <span class="material-symbols-outlined text-sm">home</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">Permanent Address</p>
+                      <p class="text-sm font-bold text-slate-700 leading-relaxed mt-0.5">A-402, Shiv Shakti
+                        Apts,<br />Andheri East, Mumbai, 400069</p>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-4">
+                    <div
+                      class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                      <span class="material-symbols-outlined text-sm">emergency</span></div>
+                    <div>
+                      <p class="text-[10px] font-bold text-slate-500 uppercase">Emergency Contact (Father)</p>
+                      <p class="text-sm font-black text-slate-800 mt-0.5">Ajay Dubey</p>
+                      <p class="text-xs font-bold text-slate-500">+91 99887 76655</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Metrics -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white p-6 rounded-3xl border border-outline-variant shadow-sm hover-lift">
+            <p class="text-[10px] font-black text-on-surface-variant mb-3">Attendance</p>
+            <div class="flex items-center gap-4">
+              <div class="relative w-12 h-12">
+                <svg class="w-full h-full transform -rotate-90">
+                  <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent"
+                    class="text-slate-100" />
+                  <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent"
+                    stroke-dasharray="125.6" stroke-dashoffset="12.5" class="text-success metric-ring" />
+                </svg>
+                <span class="absolute inset-0 flex items-center justify-center text-[10px] font-black">90%</span>
+              </div>
+              <p class="text-xl font-black font-headline">90%</p>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-3xl border border-outline-variant shadow-sm hover-lift">
+            <p class="text-[10px] font-black text-on-surface-variant mb-3">Courses</p>
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined">menu_book</span>
+              </div>
+              <p class="text-xl font-black font-headline">06</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW Campus Spotlight (Restored College Image) -->
+        <div class="bg-white rounded-[2.5rem] overflow-hidden border border-outline-variant shadow-sm group hover-lift">
+          <div class="relative h-48 overflow-hidden">
+            <img
+              src="https://www.collegebatch.com/static/clg-gallery/shree-lr-tiwari-college-of-engineering-thane-322747.webp"
+              alt="Campus Hub"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+            <div class="absolute bottom-4 left-6">
+              <p class="text-[8px] font-black text-primary mb-1">Campus Hub</p>
+              <h4 class="text-white font-headline font-black italic text-sm leading-tight">Smart Infrastructure</h4>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="flex items-center gap-3 text-[10px] font-bold text-on-surface-variant">
+              <span class="material-symbols-outlined text-sm text-success">location_on</span>
+              Main Campus Block
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content Area -->
+      <div class="col-span-12 lg:col-span-8 space-y-8">
+
+        <!-- Current Schedule -->
+        <section
+          class="bg-white rounded-[2.5rem] p-10 border border-outline-variant shadow-sm space-y-8 overflow-hidden relative group">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-black font-headline italic">Live Schedule</h2>
+            <a href="timetable.html"
+              class="text-[10px] font-black text-primary athletic-italic border-b-2 border-primary/20 hover:border-primary transition-all">VIEW
+              FULL CALENDAR</a>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Active -->
+            <div
+              class="flex items-center gap-8 p-6 bg-primary/5 rounded-3xl border border-primary/20 relative overflow-hidden group-active transition-all">
+              <div class="absolute left-0 top-0 bottom-0 w-2 bg-primary"></div>
+              <div class="text-center min-w-[80px]">
+                <p class="text-xl font-black font-headline italic leading-none">09:00</p>
+                <p class="text-[10px] font-black text-primary/60">STARTED</p>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-black italic leading-tight">Advanced Data Structures</h3>
+                <p class="text-xs text-on-surface-variant font-medium mt-1">Hall 4B • Dr. Sarah Miller (Mentorship)</p>
+              </div>
+              <div
+                class="hidden md:flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full text-[10px] font-black italic">
+                <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                ONGOING NOW
+              </div>
+            </div>
+
+            <!-- Upcoming -->
+            <div
+              class="flex items-center gap-8 p-6 hover:bg-slate-50 rounded-3xl transition-all border border-transparent hover:border-outline-variant">
+              <div class="text-center min-w-[80px]">
+                <p class="text-xl font-black font-headline text-on-surface-variant italic leading-none">11:30</p>
+                <p class="text-[10px] font-black text-on-surface-variant">NEXT</p>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-black italic leading-tight text-on-surface-variant">Operating Systems Lab</h3>
+                <p class="text-xs text-on-surface-variant font-medium mt-1">Main Lab 2 • Prof. James Kaviraj</p>
+              </div>
+              <button
+                class="bg-white border border-outline-variant p-3 rounded-2xl hover:border-primary transition-all">
+                <span class="material-symbols-outlined text-primary text-sm">notifications</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Interactive Cards Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+
+          <!-- Attendance Expandable Card -->
+          <div class="block w-full"> <!-- wrapper -->
+          <div id="attendance-card"
+            onclick="if(!this.classList.contains('fixed')) openAttendanceModal(this)"
+            class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm hover-lift cursor-pointer transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 origin-center flex flex-col overflow-hidden">
+            
+            <button id="attendance-close-btn" onclick="event.stopPropagation(); closeAttendanceModal();" class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full flex items-center justify-center opacity-0 hidden transition-opacity z-50">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div id="attendance-preview" class="flex justify-between items-center z-10 relative transition-all duration-300 w-full opacity-100">
+              <div>
+                <h2 class="text-2xl font-black font-headline italic">Attendance</h2>
+                <p class="text-xs text-on-surface-variant font-bold mt-1">Tap to view full scanner</p>
+              </div>
+              <div
+                class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110 shrink-0">
+                <span class="material-symbols-outlined font-black">zoom_out_map</span>
+              </div>
+            </div>
+
+            <div id="attendance-expanded-content"
+              class="hidden opacity-0 flex-col w-full h-full text-left transition-opacity duration-300 overflow-y-auto custom-scrollbar pt-6 space-y-6 pb-4">
+              <!-- QR Scanner Placeholder -->
+              <div class="flex justify-center w-full my-4 relative">
+                <div class="bg-black/90 rounded-[2rem] aspect-square w-full max-w-[280px] md:max-w-xs flex flex-col items-center justify-center relative shadow-[inset_0_0_50px_rgba(0,0,0,1)] overflow-hidden border-[6px] border-slate-900 mx-auto">
+                  
+                  <!-- Scanner Recticle Bracket UI -->
+                  <div class="absolute inset-8 z-10 opacity-80 backdrop-blur-sm pointer-events-none">
+                    <div class="absolute top-0 left-0 w-10 h-10 border-t-[5px] border-l-[5px] border-primary rounded-tl-xl"></div>
+                    <div class="absolute top-0 right-0 w-10 h-10 border-t-[5px] border-r-[5px] border-primary rounded-tr-xl"></div>
+                    <div class="absolute bottom-0 left-0 w-10 h-10 border-b-[5px] border-l-[5px] border-primary rounded-bl-xl"></div>
+                    <div class="absolute bottom-0 right-0 w-10 h-10 border-b-[5px] border-r-[5px] border-primary rounded-br-xl"></div>
+                  </div>
+
+                  <span class="material-symbols-outlined text-white/30 text-5xl mb-4 animate-pulse">qr_code_scanner</span>
+                  <p class="text-white/60 text-[10px] font-black tracking-widest uppercase">Align Code In Frame</p>
+                  
+                  <!-- Clean laser scan line -->
+                  <div class="absolute left-8 right-8 h-[3px] rounded-full bg-primary top-10 scan-line shadow-[0_0_15px_#004ac6] z-20 opacity-90 blur-[0.5px]"></div>
+                  
+                  <!-- Simulate Scan Button -->
+                  <button onclick="simulateScan()" class="absolute bottom-6 bg-primary text-white px-6 py-2 rounded-full text-[10px] font-black italic shadow-lg hover:scale-105 transition-all z-30">
+                    SIMULATE SCAN
+                  </button>
+                </div>
+              </div>
+
+              <!-- Attendance Stats -->
+              <div class="grid grid-cols-2 gap-4">
+                <div
+                  class="bg-success/10 p-4 rounded-2xl border border-success/20 hover:bg-success/20 transition-colors">
+                  <p class="text-[10px] font-black text-success mb-1">Present</p>
+                  <p class="text-2xl font-black text-success font-headline">21 <span class="text-xs">Days</span></p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-2xl border border-red-100 hover:bg-red-100 transition-colors">
+                  <p class="text-[10px] font-black text-red-500 mb-1">Absent</p>
+                  <p class="text-2xl font-black text-red-500 font-headline">03 <span class="text-xs">Days</span></p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant">
+                <span class="text-sm font-bold text-on-surface-variant">Total Percentage</span>
+                <span class="text-2xl font-black text-primary font-headline">93.3%</span>
+              </div>
+
+              <!-- Monthly Grid -->
+              <div>
+                <p class="text-[10px] font-black text-on-surface-variant mb-3 uppercase tracking-wider">Recent Status
+                  Grid</p>
+                <div class="grid grid-cols-7 gap-1 sm:gap-2">
+                  <!-- Week 1 -->
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">1</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">2</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">3</span></div>
+                  <div class="aspect-square bg-red-500/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">4</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">5</span></div>
+                  <div class="aspect-square bg-slate-100 rounded-md"></div>
+                  <div class="aspect-square bg-slate-100 rounded-md"></div>
+                  <!-- Week 2 -->
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">8</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">9</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">10</span></div>
+                  <div class="aspect-square bg-success/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">11</span></div>
+                  <div class="aspect-square bg-red-500/90 rounded-md shadow-sm flex items-center justify-center"><span
+                      class="text-[9px] text-white font-black">12</span></div>
+                  <div
+                    class="aspect-square bg-slate-100 rounded-md flex items-center justify-center border border-slate-200">
+                    <span class="text-[9px] text-slate-400 font-bold">13</span></div>
+                  <div
+                    class="aspect-square bg-slate-100 rounded-md flex items-center justify-center border border-slate-200">
+                    <span class="text-[9px] text-slate-400 font-bold">14</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Academic Overview Expandable Card -->
+          <div class="block w-full mt-8">
+            <div id="academic-card"
+              onclick="if(!this.classList.contains('fixed')) openAcademicModal(this)"
+              class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm hover-lift cursor-pointer transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10 flex flex-col overflow-hidden">
+
+              <!-- Close Button -->
+              <button id="academic-close-btn"
+                onclick="event.stopPropagation(); closeAcademicModal();"
+                class="absolute top-6 right-6 w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full hidden items-center justify-center transition-opacity z-50">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+
+              <!-- Preview (collapsed) -->
+              <div id="academic-preview" class="flex justify-between items-center w-full z-10 relative transition-all duration-300 opacity-100">
+                <div>
+                  <h2 class="text-2xl font-black font-headline italic">Academic Overview</h2>
+                  <p class="text-xs text-on-surface-variant font-bold mt-1">Tap to view full performance report</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <span class="material-symbols-outlined font-black">school</span>
+                </div>
+              </div>
+
+              <!-- Quick stats always visible -->
+              <div class="flex gap-3 mt-5">
+                <div class="flex-1 bg-primary/5 border border-primary/10 rounded-2xl p-3 text-center">
+                  <p class="text-[9px] font-black text-primary uppercase">CGPA</p>
+                  <p class="text-2xl font-black font-headline text-primary italic">8.14</p>
+                </div>
+                <div class="flex-1 bg-success/5 border border-success/10 rounded-2xl p-3 text-center">
+                  <p class="text-[9px] font-black text-success uppercase">Rank</p>
+                  <p class="text-2xl font-black font-headline text-success italic">#05</p>
+                </div>
+                <div class="flex-1 bg-sky-50 border border-sky-100 rounded-2xl p-3 text-center">
+                  <p class="text-[9px] font-black text-sky-600 uppercase">Attend.</p>
+                  <p class="text-2xl font-black font-headline text-sky-700 italic">93%</p>
+                </div>
+              </div>
+
+              <!-- Expanded Content -->
+              <div id="academic-expanded-content"
+                class="hidden opacity-0 flex-col w-full h-full text-left transition-opacity duration-300 overflow-y-auto custom-scrollbar pt-6 space-y-6 pb-4">
+
+                <!-- CGPA + Rank -->
+                <div class="flex gap-4">
+                  <div class="flex-1 bg-primary/5 border border-primary/15 rounded-2xl p-5 text-center">
+                    <p class="text-[10px] font-black text-primary uppercase tracking-wider mb-1">Current CGPA</p>
+                    <p class="text-4xl font-black font-headline text-primary italic">8.14</p>
+                    <p class="text-[10px] text-on-surface-variant font-bold mt-1">Semester 4 &bull; Year 2</p>
+                  </div>
+                  <div class="flex-1 bg-success/5 border border-success/15 rounded-2xl p-5 text-center">
+                    <p class="text-[10px] font-black text-success uppercase tracking-wider mb-1">Class Rank</p>
+                    <p class="text-4xl font-black font-headline text-success italic">#05</p>
+                    <p class="text-[10px] text-on-surface-variant font-bold mt-1">Out of 68 students</p>
+                  </div>
+                </div>
+
+                <!-- Semester GPA Bar Chart -->
+                <div class="space-y-2">
+                  <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Semester GPA Trend</p>
+                  <div class="flex items-end gap-3 h-24 bg-slate-50 rounded-2xl px-5 py-3">
+                    <div class="flex flex-col items-center gap-1 flex-1">
+                      <div class="w-full rounded-t-lg bg-primary/25" style="height:42%"></div>
+                      <span class="text-[9px] font-bold text-slate-500">S1</span>
+                      <span class="text-[9px] font-black text-primary">7.2</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 flex-1">
+                      <div class="w-full rounded-t-lg bg-primary/40" style="height:58%"></div>
+                      <span class="text-[9px] font-bold text-slate-500">S2</span>
+                      <span class="text-[9px] font-black text-primary">7.8</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 flex-1">
+                      <div class="w-full rounded-t-lg bg-primary/65" style="height:72%"></div>
+                      <span class="text-[9px] font-bold text-slate-500">S3</span>
+                      <span class="text-[9px] font-black text-primary">8.0</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 flex-1">
+                      <div class="w-full rounded-t-lg bg-primary" style="height:88%"></div>
+                      <span class="text-[9px] font-bold text-slate-500">S4</span>
+                      <span class="text-[9px] font-black text-primary">8.14</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Subject-wise Marks -->
+                <div class="space-y-3">
+                  <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Subject-Wise Marks &mdash; Semester 4</p>
+                  <div class="space-y-3">
+                    <div>
+                      <div class="flex justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-700">Computer Eng. Management</span>
+                        <span class="text-xs font-black text-primary">82 / 100</span>
+                      </div>
+                      <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full" style="width:82%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-700">Discrete Mathematics</span>
+                        <span class="text-xs font-black text-violet-600">78 / 100</span>
+                      </div>
+                      <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-violet-400 rounded-full" style="width:78%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-700">Design Thinking</span>
+                        <span class="text-xs font-black text-rose-500">88 / 100</span>
+                      </div>
+                      <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-rose-400 rounded-full" style="width:88%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-700">Microprocessor 8086</span>
+                        <span class="text-xs font-black text-emerald-600">75 / 100</span>
+                      </div>
+                      <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400 rounded-full" style="width:75%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-700">Idea Lab (Project)</span>
+                        <span class="text-xs font-black text-amber-500">91 / 100</span>
+                      </div>
+                      <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-400 rounded-full" style="width:91%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Attendance + Progress bars -->
+                <div class="flex gap-4">
+                  <div class="flex-1 bg-sky-50 border border-sky-100 rounded-2xl p-4">
+                    <p class="text-[10px] font-black text-sky-600 uppercase tracking-wider mb-2">Attendance</p>
+                    <div class="h-2.5 bg-sky-100 rounded-full overflow-hidden mb-1.5">
+                      <div class="h-full bg-sky-500 rounded-full" style="width:93%"></div>
+                    </div>
+                    <p class="text-xs font-black text-sky-700">93.3% &mdash; Excellent</p>
+                  </div>
+                  <div class="flex-1 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+                    <p class="text-[10px] font-black text-amber-600 uppercase tracking-wider mb-2">Sem Progress</p>
+                    <div class="h-2.5 bg-amber-100 rounded-full overflow-hidden mb-1.5">
+                      <div class="h-full bg-amber-400 rounded-full" style="width:68%"></div>
+                    </div>
+                    <p class="text-xs font-black text-amber-700">68% Complete</p>
+                  </div>
+                </div>
+
+                <!-- Marksheet Button -->
+                <button onclick="event.stopPropagation(); showToast('Opening Full Marksheet...')"
+                  class="w-full py-4 bg-primary text-white rounded-2xl text-sm font-black italic shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                  View Complete Marksheet
+                </button>
+
+              </div>
+            </div>
+             <!-- Notice Board Expandable Card Wrapper -->
+          <div class="h-full w-full block"> <!-- Maintains grid shape when card becomes fixed -->
+            <div id="notice-card" onclick="toggleNoticeBoardModal(this)"
+              class="bg-sky-50 text-slate-800 rounded-[2.5rem] p-8 border border-sky-200 shadow-[0_15px_40px_-15px_rgba(14,165,233,0.3)] hover-lift cursor-pointer transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative group flex flex-col z-10 origin-center">
+              <div
+                class="absolute -top-20 -right-20 w-64 h-64 bg-sky-300/20 rounded-full blur-3xl group-hover:bg-sky-400/20 transition-all pointer-events-none">
+              </div>
+
+              <div class="flex justify-between items-center z-10 relative">
+                <div>
+                  <h2 class="text-2xl font-black font-headline italic text-sky-950">Notice Board</h2>
+                  <p id="notice-subtitle" class="text-xs text-sky-700 font-bold mt-1 transition-opacity">Tap to expand
+                    55% view</p>
+                </div>
+                <div
+                  class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-sky-600 transition-transform group-hover:rotate-[15deg] group-hover:scale-110 shadow-sm border border-sky-100 shrink-0">
+                  <span class="material-symbols-outlined font-black">zoom_out_map</span>
+                </div>
+              </div>
+
+              <!-- Preview content (hides when expanded) -->
+              <div id="notice-preview" class="preview-text mt-6 relative z-10 transition-all duration-300 opacity-100">
+                <div class="flex items-start gap-3 mb-2">
+                  <div class="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shadow-[0_0_5px_#ef4444]"></div>
+                  <div>
+                    <p class="text-[10px] text-sky-700/80 mb-0.5 font-bold uppercase tracking-wider">Placement •
+                      Urgent</p>
+                    <p class="text-sm font-black italic text-slate-800 truncate max-w-[180px] lg:max-w-[200px]">TCS Digital Registration</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 mt-4 ml-4">
+                  <div class="flex -space-x-2">
+                    <div
+                      class="w-5 h-5 rounded-full bg-white border border-sky-100 flex items-center justify-center text-[8px] font-black text-slate-600 shadow-sm z-20">
+                      TPO</div>
+                    <div
+                      class="w-5 h-5 rounded-full bg-sky-100 border border-sky-100 flex items-center justify-center text-[8px] font-black text-sky-700 shadow-sm z-10">
+                      LIB</div>
+                  </div>
+                  <p
+                    class="text-[10px] text-sky-700/60 italic font-bold shadow-sm px-2 py-0.5 rounded-full bg-white/50 border border-sky-100/50">
+                    + 2 more updates...</p>
+                </div>
+              </div>
+
+              <div id="notice-expanded-content"
+                class="expansion-wrapper hidden opacity-0 flex-col space-y-4 relative z-10 mt-6 h-full flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar transition-opacity duration-300">
+              <!-- Notice 1: Holiday -->
+                <div class="bg-white p-5 rounded-2xl border border-sky-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-50 transition-all">
+                  <div class="flex justify-between items-start mb-3">
+                    <span class="px-2.5 py-1 bg-green-50 text-green-700 text-[8px] font-black rounded-full uppercase tracking-wider border border-green-100 shadow-sm">🎉 Holiday</span>
+                    <span class="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">Apr 14</span>
+                  </div>
+                  <h4 class="text-sm font-black italic text-slate-800 mb-1 leading-snug">Dr. Ambedkar Jayanti — College Holiday</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-medium">The college will remain closed on April 14, 2025 on the occasion of Dr. B.R. Ambedkar Jayanti. All classes and labs are cancelled for the day.</p>
+                  <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
+                    <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[8px] font-black">ADM</div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">— Administration Office</p>
+                  </div>
+                </div>
+
+                <!-- Notice 2: CarpeDiem Event -->
+                <div class="bg-white p-5 rounded-2xl border border-sky-100 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-50 transition-all">
+                  <div class="flex justify-between items-start mb-3">
+                    <span class="px-2.5 py-1 bg-purple-50 text-purple-700 text-[8px] font-black rounded-full uppercase tracking-wider border border-purple-100 shadow-sm">⭐ CarpeDiem</span>
+                    <span class="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">Apr 19–20</span>
+                  </div>
+                  <h4 class="text-sm font-black italic text-slate-800 mb-1 leading-snug">CarpeDiem 2025 — Annual College Fest</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-medium">Our biggest annual cultural fest is here! 2 days of dance, music, drama, tech events & food stalls. Register your teams before April 15th to secure your spot.</p>
+                  <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
+                    <div class="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-[8px] font-black">FES</div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">— Student Council</p>
+                  </div>
+                </div>
+
+                <!-- Notice 3: Exam Date Release -->
+                <div class="bg-white p-5 rounded-2xl border border-sky-100 hover:border-red-300 hover:shadow-lg hover:shadow-red-50 transition-all">
+                  <div class="flex justify-between items-start mb-3">
+                    <span class="px-2.5 py-1 bg-red-50 text-red-600 text-[8px] font-black rounded-full uppercase tracking-wider border border-red-100 shadow-sm">📋 Exam Dates</span>
+                    <span class="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">Apr 10</span>
+                  </div>
+                  <h4 class="text-sm font-black italic text-slate-800 mb-1 leading-snug">Sem 4 End-Sem Exam Schedule Released</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-medium">University has released the end-semester timetable for Semester 4. Exams begin May 5, 2025. Download the full schedule from the exam section.</p>
+                  <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
+                    <div class="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-[8px] font-black">EXM</div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">— Examination Cell</p>
+                  </div>
+                </div>
+
+                <!-- Notice 4: Result Release -->
+                <div class="bg-white p-5 rounded-2xl border border-sky-100 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50 transition-all">
+                  <div class="flex justify-between items-start mb-3">
+                    <span class="px-2.5 py-1 bg-amber-50 text-amber-700 text-[8px] font-black rounded-full uppercase tracking-wider border border-amber-100 shadow-sm">🏆 Result</span>
+                    <span class="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">Apr 8</span>
+                  </div>
+                  <h4 class="text-sm font-black italic text-slate-800 mb-1 leading-snug">Semester 3 Results Declared</h4>
+                  <p class="text-xs text-slate-600 leading-relaxed font-medium">Results for Semester 3 (Nov 2024) have been officially published. Log in to the university portal to view your full marksheet and SGPA.</p>
+                  <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
+                    <div class="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-[8px] font-black">RTL</div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">— University Results Portal</p>
+                  </div>
+                </div>
+
+                <button onclick="event.stopPropagation(); showToast('Loading full notice board...')"
+                  class="w-full shrink-0 py-4 bg-sky-100/50 hover:bg-sky-200/50 rounded-xl text-xs font-black italic text-sky-800 transition-all border border-sky-200 mt-2 group/btn shadow-[inset_0_2px_5px_rgba(255,255,255,0.5)]">
+                  VIEW ALL NOTICES <span class="material-symbols-outlined text-[10px] ml-1 group-hover/btn:translate-x-1 transition-transform inline-block align-middle">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEW: Campus Live Activity Feed -->
+          <div class="col-span-1 md:col-span-2 block w-full mt-4">
+            <div class="bg-white rounded-[2.5rem] p-8 border border-outline-variant shadow-sm flex flex-col">
+              <div class="flex justify-between items-center mb-6">
+                <div>
+                  <h2 class="text-2xl font-black font-headline italic text-on-surface">Campus Activity</h2>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="w-1.5 h-1.5 bg-success rounded-full animate-ping"></span>
+                    <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Live Updates Available</p>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-sm">bolt</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="live-feed-container" class="space-y-4">
+                <!-- Data will be injected here -->
+                <div class="animate-pulse flex flex-col gap-4">
+                  <div class="h-16 bg-slate-100 rounded-2xl w-full"></div>
+                  <div class="h-16 bg-slate-100 rounded-2xl w-full"></div>
+                </div>
+              </div>
+
+              <a href="lost-found.html" class="mt-6 w-full py-4 text-center border-2 border-dashed border-outline-variant rounded-2xl text-[10px] font-black text-on-surface-variant hover:border-primary hover:text-primary transition-all uppercase tracking-widest">
+                Explore All Campus Activity
+              </a>
+            </div>
+          </div>
+/div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </div>
+
+    <!-- AI Assistant FAB -->
+    <button onclick="toggleAI()"
+      class="fixed bottom-8 right-8 bg-gradient-to-br from-primary to-primary-container text-white p-5 rounded-full shadow-2xl flex items-center gap-3 group hover:scale-105 active:scale-95 transition-all duration-300 z-50">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">smart_toy</span>
+      <span
+        class="font-headline font-bold text-sm max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">AI
+        Assistant</span>
+    </button>
+
+    <!-- AI Sidebar -->
+    <div id="ai-sidebar"
+      class="fixed top-0 right-0 h-screen w-[400px] bg-white z-[60] translate-x-full flex flex-col border-l border-outline-variant">
+      <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 class="text-xl font-black font-headline italic">Campus AI</h3>
+          <p class="text-[10px] font-black text-primary leading-none mt-1">Intelligence Layer v2.4</p>
+        </div>
+        <button onclick="toggleAI()"
+          class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all">
+          <span class="material-symbols-outlined text-on-surface-variant">close</span>
+        </button>
+      </div>
+      <div class="flex-1 p-8 overflow-y-auto space-y-6">
+        <div class="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+          <p class="text-xs font-medium text-on-surface leading-relaxed italic">"Hello Tejas! I've analyzed your
+            upcoming schedule. You have a gap between your Lab and Seminar tomorrow. Would you like me to book a study
+            room?"</p>
+        </div>
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-on-surface-variant px-1 italic">Suggested Actions</p>
+          <button onclick="showToast('Searching for available rooms...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Book Study Room Hall 4B</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+          <button onclick="showToast('Drafting priority list...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Review Algorithms Deadline</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+      <div class="p-8 border-t border-outline-variant">
+        <div class="relative">
+          <input type="text" placeholder="Ask anything about campus..."
+            class="w-full pl-4 pr-12 py-4 bg-slate-50 border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-medium italic">
+          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-primary p-2">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast"
+      class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-primary">info</span>
+      <p id="toast-message" class="text-[10px] font-black italic"></p>
+    </div>
+
+  </main>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000/api";
+    let userData = null;
+
+    async function initDashboard() {
+        const token = localStorage.getItem('access_token');
+        const rawUserData = localStorage.getItem('user_data');
+        
+        if (!token || !rawUserData) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        try {
+            userData = JSON.parse(rawUserData);
+            updateUIWithProfile();
+            fetchAttendance();
+            fetchNotifications();
+            fetchTimetable();
+            fetchLiveActivity();
+            // Start Live Polling for Dashboard Every 10 Seconds
+            setInterval(fetchLiveActivity, 10000);
+        } catch (e) {
+            console.error("Initialization error:", e);
+        }
+    }
+
+    async function fetchLiveActivity() {
+        const container = document.getElementById('live-feed-container');
+        if (!container) return;
+
+        try {
+            // Fetch Latest 2 Lost Items
+            const lostRes = await fetch(`${API_BASE}/lost-found/items/?limit=2`);
+            const lostData = await lostRes.json();
+            const lostItems = Array.isArray(lostData) ? lostData : (lostData.results || []);
+
+            // Fetch Latest 2 Gymkhana Slots (Placeholder for now, using items)
+            const gymRes = await fetch(`${API_BASE}/gymkhana/equipment/`);
+            const gymData = await gymRes.json();
+            const gymItems = (Array.isArray(gymData) ? gymData : (gymData.results || [])).slice(0, 2);
+
+            let html = '';
+
+            // Render Lost Items
+            lostItems.forEach(item => {
+                html += `
+                <div class="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl border border-orange-100 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div class="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-600">
+                        <span class="material-symbols-outlined text-sm">search</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[10px] font-black text-orange-600 uppercase">Lost & Found</p>
+                        <h4 class="text-xs font-black italic text-slate-800 truncate">${item.item_name}</h4>
+                        <p class="text-[10px] text-slate-500 font-bold">${item.location}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-white rounded-lg text-[9px] font-black text-orange-600 shadow-sm">NEW</span>
+                </div>`;
+            });
+
+            // Render Gymkhana Items
+            gymItems.forEach(item => {
+                html += `
+                <div class="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-right-4 duration-700">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined text-sm">fitness_center</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[10px] font-black text-primary uppercase">Gymkhana</p>
+                        <h4 class="text-xs font-black italic text-slate-800 truncate">${item.name}</h4>
+                        <p class="text-[10px] text-slate-500 font-bold">In Arena Now</p>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                </div>`;
+            });
+
+            if (html === '') {
+                html = '<p class="text-xs text-on-surface-variant italic text-center py-4">No recent activity detected...</p>';
+            }
+
+            container.innerHTML = html;
+
+        } catch (e) {
+            console.error("Live feed fetch error:", e);
+        }
+    }
+
+    function updateUIWithProfile() {
+        if (!userData) return;
+        
+        // Update Name & Dept in Header profile section
+        const nameEls = document.querySelectorAll('.font-headline.italic.text-slate-800');
+        nameEls.forEach(el => { 
+            if (el.textContent === "Tejas Dubey") el.textContent = userData.full_name;
+        });
+
+        // Update ID Card etc.
+        const deptEls = document.querySelectorAll('.text-primary.font-bold');
+        deptEls.forEach(el => {
+            if (el.textContent.includes("B.Tech")) el.textContent = userData.department_name || "Engineering Student";
+        });
+
+        // Update ID Card fields
+        const idEls = document.querySelectorAll('.text-sm.font-black.text-slate-700');
+        idEls.forEach(el => {
+            if (el.textContent === "CS-2024-042") el.textContent = userData.student_id || "N/A";
+            if (el.textContent === "42") el.textContent = userData.roll_number || "N/A";
+        });
+        
+        const emailEls = document.querySelectorAll('.text-sm.font-black.text-slate-800');
+        emailEls.forEach(el => {
+            if (el.textContent === "tejas.d@campus.edu") el.textContent = userData.email;
+        });
+    }
+
+    async function fetchAttendance() {
+        try {
+            const response = await fetch(`${API_BASE}/attendance/summary/?student_id=${userData.id}`);
+            const data = await response.json();
+            const summary = Array.isArray(data) ? data[0] : (data.results ? data.results[0] : null);
+            
+            if (summary) {
+                const percent = parseFloat(summary.percentage).toFixed(1);
+                // Update metrics
+                document.querySelectorAll('.text-xl.font-black.font-headline').forEach(el => {
+                    if (el.textContent === "90%") el.textContent = `${percent}%`;
+                });
+                document.querySelectorAll('.text-success.metric-ring').forEach(el => {
+                     const dash = 125.6 * (1 - percent / 100);
+                     el.style.strokeDashoffset = dash;
+                });
+                document.querySelectorAll('.text-sm.font-black.text-success').forEach(el => {
+                    if (el.textContent.includes("93.3%")) el.textContent = `${percent}%`;
+                });
+            }
+        } catch (e) { console.error("Attendance fetch error:", e); }
+    }
+
+    async function fetchNotifications() {
+        try {
+            const response = await fetch(`${API_BASE}/notifications/`);
+            const data = await response.json();
+            const list = Array.isArray(data) ? data : (data.results || []);
+            
+            // Render on Notice Board if needed
+            // For now just logging
+            console.log("Notifications:", list);
+        } catch (e) { console.error("Notifications fetch error:", e); }
+    }
+
+    async function fetchTimetable() {
+        // Placeholder for timetable integration
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    async function simulateScan() {
+        if (!userData) {
+            alert("Session expired. Please log in again.");
+            return;
+        }
+
+        const qrData = prompt("Simulate Scanner: Enter QR Code Data (e.g. CAMPUS360_ATT|...)", "CAMPUS360_ATT|");
+        
+        if (!qrData) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/attendance/scan-qr/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({
+                    qr_code_data: qrData,
+                    student_id: userData.id
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showToast("Attendance Marked: " + (data.subject || "Processed"));
+                fetchAttendance(); // Refresh percents
+            } else {
+                alert("Scan Error: " + (data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error("Scan error:", e);
+            alert("Network Error during scan simulation.");
+        }
+    }
+
+    window.onload = () => {
+        initDashboard();
+    };
+
+    function toggleAI() {
+      const sidebar = document.getElementById('ai-sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    function openAcademicModal(element) {
+      const preview = document.getElementById('academic-preview');
+      const expandedContent = document.getElementById('academic-expanded-content');
+      const closeBtn = document.getElementById('academic-close-btn');
+
+      // Create backdrop if not exists
+      let backdrop = document.getElementById('academic-modal-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'academic-modal-backdrop';
+        backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] opacity-0 transition-opacity duration-300';
+        backdrop.onclick = closeAcademicModal;
+        document.body.appendChild(backdrop);
+      }
+
+      backdrop.classList.remove('hidden');
+      setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+
+      // Expand card to fixed center modal
+      element.classList.remove('relative', 'hover-lift');
+      element.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[60vw]', 'h-[85vh]', 'z-[100]', 'cursor-default');
+
+      // Show close button
+      closeBtn.classList.remove('hidden');
+      setTimeout(() => closeBtn.classList.add('opacity-100'), 150);
+
+      // Toggle content
+      preview.classList.add('opacity-0');
+      setTimeout(() => {
+        preview.classList.add('hidden');
+        expandedContent.classList.remove('hidden');
+        expandedContent.style.display = 'flex';
+        setTimeout(() => expandedContent.classList.remove('opacity-0'), 10);
+      }, 150);
+    }
+
+    function closeAcademicModal() {
+      const element = document.getElementById('academic-card');
+      if (!element) return;
+      const preview = document.getElementById('academic-preview');
+      const expandedContent = document.getElementById('academic-expanded-content');
+      const closeBtn = document.getElementById('academic-close-btn');
+
+      const backdrop = document.getElementById('academic-modal-backdrop');
+      if (backdrop) {
+        backdrop.classList.remove('opacity-100');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+
+      closeBtn.classList.remove('opacity-100');
+      setTimeout(() => closeBtn.classList.add('hidden'), 150);
+
+      // Revert content
+      expandedContent.classList.add('opacity-0');
+      setTimeout(() => {
+        expandedContent.classList.add('hidden');
+        expandedContent.style.display = 'none';
+        preview.classList.remove('hidden');
+        setTimeout(() => preview.classList.remove('opacity-0'), 10);
+      }, 150);
+
+      // Revert card size
+      element.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[60vw]', 'h-[85vh]', 'z-[100]', 'cursor-default');
+      element.classList.add('relative', 'hover-lift');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+
+      setTimeout(() => {
+        toast.classList.remove('toast-active');
+      }, 3000);
+    }
+
+    // Dynamic Year or other interactive scripts
+  </script>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      const isHidden = sidebar.classList.contains('-translate-x-full');
+      
+      if (isHidden) {
+        backdrop.classList.remove('hidden');
+        setTimeout(() => {
+          sidebar.classList.remove('-translate-x-full');
+          backdrop.classList.remove('opacity-0');
+        }, 10);
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+    }
+
+    function openProfileModal(element) {
+      const preview = document.getElementById('profile-preview');
+      const expandedContent = document.getElementById('profile-expanded-content');
+      const closeBtn = document.getElementById('profile-close-btn');
+
+      // Create backdrop if not exists
+      let backdrop = document.getElementById('profile-modal-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'profile-modal-backdrop';
+        backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] opacity-0 transition-opacity duration-300';
+        backdrop.onclick = closeProfileModal;
+        document.body.appendChild(backdrop);
+      }
+
+      backdrop.classList.remove('hidden');
+      setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+
+      // Expand card to fixed center modal
+      element.classList.remove('relative', 'hover-lift', 'achievement-glow');
+      element.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[60vw]', 'h-[85vh]', 'z-[100]', 'cursor-default');
+
+      // Show close button
+      closeBtn.classList.remove('hidden');
+      setTimeout(() => closeBtn.classList.add('opacity-100'), 150);
+
+      // Toggle content visibility
+      preview.classList.add('opacity-0');
+      setTimeout(() => {
+        preview.classList.add('hidden');
+        expandedContent.classList.remove('hidden');
+        expandedContent.style.display = 'flex';
+        // Fade in
+        setTimeout(() => expandedContent.classList.remove('opacity-0'), 10);
+      }, 150);
+    }
+
+    function closeProfileModal() {
+      const element = document.getElementById('profile-card');
+      if (!element) return;
+      const preview = document.getElementById('profile-preview');
+      const expandedContent = document.getElementById('profile-expanded-content');
+      const closeBtn = document.getElementById('profile-close-btn');
+
+      const backdrop = document.getElementById('profile-modal-backdrop');
+      if (backdrop) {
+        backdrop.classList.remove('opacity-100');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+
+      closeBtn.classList.remove('opacity-100');
+      setTimeout(() => closeBtn.classList.add('hidden'), 150);
+
+      // Revert content
+      expandedContent.classList.add('opacity-0');
+      setTimeout(() => {
+        expandedContent.classList.add('hidden');
+        expandedContent.style.display = 'none';
+        preview.classList.remove('hidden');
+        setTimeout(() => preview.classList.remove('opacity-0'), 10);
+      }, 150);
+
+      // Revert card size
+      element.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[60vw]', 'h-[85vh]', 'z-[100]', 'cursor-default');
+      element.classList.add('relative', 'hover-lift', 'achievement-glow');
+    }
+
+    function openAttendanceModal(element) {
+      const preview = document.getElementById('attendance-preview');
+      const expandedContent = document.getElementById('attendance-expanded-content');
+      const closeBtn = document.getElementById('attendance-close-btn');
+
+      // Create backdrop if not exists
+      let backdrop = document.getElementById('attendance-modal-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'attendance-modal-backdrop';
+        backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] opacity-0 transition-opacity duration-300';
+        backdrop.onclick = closeAttendanceModal;
+        document.body.appendChild(backdrop);
+      }
+
+      backdrop.classList.remove('hidden');
+      setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+
+      // Expand card to fixed center modal
+      element.classList.remove('relative', 'hover-lift');
+      element.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[50vw]', 'h-[75vh]', 'z-[100]', 'cursor-default');
+
+      // Show close button
+      closeBtn.classList.remove('hidden');
+      setTimeout(() => closeBtn.classList.add('opacity-100'), 150);
+
+      // Toggle content visibility
+      preview.classList.add('opacity-0');
+      setTimeout(() => {
+        preview.classList.add('hidden');
+        expandedContent.classList.remove('hidden');
+        expandedContent.style.display = 'flex';
+        // Fade in
+        setTimeout(() => expandedContent.classList.remove('opacity-0'), 10);
+      }, 150);
+    }
+
+    function closeAttendanceModal() {
+      const element = document.getElementById('attendance-card');
+      if (!element) return;
+      const preview = document.getElementById('attendance-preview');
+      const expandedContent = document.getElementById('attendance-expanded-content');
+      const closeBtn = document.getElementById('attendance-close-btn');
+
+      const backdrop = document.getElementById('attendance-modal-backdrop');
+      if (backdrop) {
+        backdrop.classList.remove('opacity-100');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      }
+
+      closeBtn.classList.remove('opacity-100');
+      setTimeout(() => closeBtn.classList.add('hidden'), 150);
+
+      // Revert content
+      expandedContent.classList.add('opacity-0');
+      setTimeout(() => {
+        expandedContent.classList.add('hidden');
+        expandedContent.style.display = 'none';
+        preview.classList.remove('hidden');
+        setTimeout(() => preview.classList.remove('opacity-0'), 10);
+      }, 150);
+
+      // Revert card size
+      element.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[95vw]', 'md:w-[80vw]', 'lg:w-[50vw]', 'h-[75vh]', 'z-[100]', 'cursor-default');
+      element.classList.add('relative', 'hover-lift');
+    }
+
+    function toggleNoticeBoardModal(element) {
+      const isExpanded = element.classList.contains('fixed');
+
+      const preview = document.getElementById('notice-preview');
+      const expandedContent = document.getElementById('notice-expanded-content');
+      const subtitle = document.getElementById('notice-subtitle');
+
+      if (!isExpanded) {
+        // Create backdrop if not exists
+        let backdrop = document.getElementById('notice-modal-backdrop');
+        if (!backdrop) {
+          backdrop = document.createElement('div');
+          backdrop.id = 'notice-modal-backdrop';
+          backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] opacity-0 transition-opacity duration-300';
+          backdrop.onclick = () => toggleNoticeBoardModal(document.getElementById('notice-card'));
+          document.body.appendChild(backdrop);
+        }
+
+        backdrop.classList.remove('hidden');
+        setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+
+        // Expand card to fixed center modal at 55vw (or 90vw on mobile)
+        element.classList.remove('relative', 'hover-lift');
+        element.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[90vw]', 'lg:w-[55vw]', 'h-[75vh]', 'z-[100]', 'cursor-default');
+
+        // Toggle content visibility
+        preview.classList.add('opacity-0');
+        setTimeout(() => {
+          preview.classList.add('hidden');
+          expandedContent.classList.remove('hidden');
+          expandedContent.style.display = 'flex';
+          // Fade in
+          setTimeout(() => expandedContent.classList.remove('opacity-0'), 10);
+        }, 150);
+
+        subtitle.textContent = "Full Screen View (55%)";
+      } else {
+        // Collapse
+        const backdrop = document.getElementById('notice-modal-backdrop');
+        if (backdrop) {
+          backdrop.classList.remove('opacity-100');
+          setTimeout(() => backdrop.classList.add('hidden'), 300);
+        }
+
+        // Revert content
+        expandedContent.classList.add('opacity-0');
+        setTimeout(() => {
+          expandedContent.classList.add('hidden');
+          expandedContent.style.display = 'none';
+          preview.classList.remove('hidden');
+          setTimeout(() => preview.classList.remove('opacity-0'), 10);
+        }, 150);
+
+        // Revert card size
+        element.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'w-[90vw]', 'lg:w-[55vw]', 'h-[75vh]', 'z-[100]', 'cursor-default');
+        element.classList.add('relative', 'hover-lift');
+
+        subtitle.textContent = "Tap to expand 55% view";
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar for Notice Modal */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(14, 165, 233, 0.05);
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(14, 165, 233, 0.2);
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(14, 165, 233, 0.4);
+    }
+  </style>
+</body>
+
+</html>

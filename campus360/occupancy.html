@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Occupancy Tracker | Campus 360</title>
+  <meta name="description" content="Real-time Classroom & Lab Occupancy Tracker for Campus 360. Check availability of classrooms, labs, and seats instantly.">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#004ac6",
+            "secondary": "#fb923c",
+            "success": "#22c55e",
+            "warning": "#eab308",
+            "error": "#ef4444",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#64748b",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .paper-grain {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Pacifico', Georgia, serif; letter-spacing: 0.01em; }
+
+    .hover-lift { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .hover-lift:hover { transform: translateY(-8px); }
+
+    .toast-active { opacity: 1 !important; transform: translate(-50%, -20px) !important; }
+
+    #ai-sidebar { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: -40px 0 80px -20px rgba(15, 23, 42, 0.15); }
+    #ai-sidebar.open { transform: translateX(0); }
+
+    .room-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .room-card:hover { transform: translateY(-6px); box-shadow: 0 25px 50px -12px rgba(0,74,198,0.12); }
+
+    .status-available { border-left: 5px solid #22c55e; }
+    .status-almost-full { border-left: 5px solid #eab308; }
+    .status-occupied { border-left: 5px solid #ef4444; }
+
+    @keyframes pulse-live { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+    .live-pulse { animation: pulse-live 2s ease-in-out infinite; }
+
+    @keyframes count-update { 0% { transform: scale(1); } 50% { transform: scale(1.15); color: #004ac6; } 100% { transform: scale(1); } }
+    .seat-update { animation: count-update 0.6s ease-out; }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+    .map-room { transition: all 0.3s ease; cursor: pointer; }
+    .map-room:hover { filter: brightness(1.2); transform: scale(1.05); }
+  </style>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+  <div class="paper-grain"></div>
+
+  <!-- Mobile Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-sm">school</span>
+        </div>
+        <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold">Student Portal</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="courses.html">
+        <span class="material-symbols-outlined">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="canteen.html">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="occupancy.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="lost-found.html">
+        <span class="material-symbols-outlined">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline" href="settings.html">
+        <span class="material-symbols-outlined">settings</span>Settings
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline" href="login.html">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+        <span class="material-symbols-outlined text-sm font-black">school</span>
+      </div>
+      <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+    </div>
+    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <main class="lg:ml-72 flex-1 p-4 md:p-8 space-y-10 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+
+    <!-- Page Header -->
+    <header>
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 bg-success rounded-full live-pulse"></div>
+            <span class="text-xs font-black text-success uppercase tracking-wider">Live Tracking</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface leading-tight">Classroom & Lab<br/><span class="text-primary italic">Occupancy.</span></h1>
+          <p class="text-on-surface-variant font-medium max-w-md">Check availability of classrooms, labs, and seats in real time. Book your spot instantly.</p>
+        </div>
+        <div class="flex gap-3 shrink-0">
+          <button onclick="showToast('Refreshing live data...')" class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-outline-variant font-bold text-sm shadow-sm hover:bg-slate-50 transition-all">
+            <span class="material-symbols-outlined text-primary text-[18px]">refresh</span>Refresh
+          </button>
+          <button onclick="openCampusMap()" class="bg-primary text-white px-6 py-3 rounded-full font-bold shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">map</span>Campus Map
+          </button>
+        </div>
+      </div>
+
+      <!-- Search + Filter Bar -->
+      <div class="flex flex-col sm:flex-row gap-3 mt-8">
+        <div class="relative flex-1">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+          <input id="search-input" type="text" placeholder="Search classroom, lab, or building..."
+            class="w-full pl-12 pr-4 py-3.5 bg-white border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium shadow-sm"
+            oninput="filterRooms()">
+        </div>
+        <select id="filter-select" onchange="filterRooms()"
+          class="px-5 py-3.5 bg-white border border-outline-variant rounded-2xl text-sm font-bold text-on-surface-variant focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm cursor-pointer">
+          <option value="all">All Rooms</option>
+          <option value="classroom">Classrooms</option>
+          <option value="computer-lab">Computer Labs</option>
+          <option value="science-lab">Science Labs</option>
+          <option value="lecture-hall">Lecture Halls</option>
+          <option value="library">Library Study Rooms</option>
+          <option value="available">Free Rooms</option>
+          <option value="occupied">Occupied Rooms</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Live Stats Bar -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl p-5 border border-outline-variant shadow-sm text-center">
+        <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-1">Total Rooms</p>
+        <p class="text-3xl font-black font-headline text-on-surface" id="stat-total">24</p>
+      </div>
+      <div class="bg-success/5 rounded-2xl p-5 border border-success/15 shadow-sm text-center">
+        <p class="text-[10px] font-black text-success uppercase tracking-wider mb-1">Available</p>
+        <p class="text-3xl font-black font-headline text-success" id="stat-available">14</p>
+      </div>
+      <div class="bg-warning/5 rounded-2xl p-5 border border-warning/15 shadow-sm text-center">
+        <p class="text-[10px] font-black text-warning uppercase tracking-wider mb-1">Almost Full</p>
+        <p class="text-3xl font-black font-headline text-warning" id="stat-almost">4</p>
+      </div>
+      <div class="bg-error/5 rounded-2xl p-5 border border-error/15 shadow-sm text-center">
+        <p class="text-[10px] font-black text-error uppercase tracking-wider mb-1">Occupied</p>
+        <p class="text-3xl font-black font-headline text-error" id="stat-occupied">6</p>
+      </div>
+    </section>
+
+    <!-- Room Cards Grid -->
+    <section>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-black font-headline">All Rooms</h2>
+        <p class="text-xs font-bold text-on-surface-variant"><span id="visible-count">12</span> rooms shown</p>
+      </div>
+      <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Cards rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Campus Map Section -->
+    <section id="campus-map-section" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-black font-headline">Live Campus Map</h2>
+        <button onclick="closeCampusMap()" class="text-xs font-black text-primary hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">close</span> Close Map
+        </button>
+      </div>
+      <div class="bg-white rounded-[2rem] p-6 md:p-10 border border-outline-variant shadow-sm">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="map-grid">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="flex items-center gap-6 mt-6 pt-4 border-t border-outline-variant justify-center flex-wrap">
+          <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-success"></div><span class="text-[10px] font-black text-on-surface-variant">Available</span></div>
+          <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-warning"></div><span class="text-[10px] font-black text-on-surface-variant">Almost Full</span></div>
+          <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-error"></div><span class="text-[10px] font-black text-on-surface-variant">Occupied</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Room Detail Modal Backdrop -->
+    <div id="room-modal-backdrop" onclick="closeRoomModal()"
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[90] hidden opacity-0 transition-opacity duration-300"></div>
+
+    <!-- Room Detail Modal -->
+    <div id="room-modal"
+      class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] md:w-[80vw] lg:w-[60vw] h-[88vh] bg-white rounded-[2.5rem] z-[100] hidden opacity-0 transition-all duration-300 flex flex-col overflow-hidden border border-outline-variant shadow-2xl">
+      <div id="room-modal-content" class="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-6">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+      class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-primary">meeting_room</span>
+      <p id="toast-message" class="text-[10px] font-black italic"></p>
+    </div>
+
+  </main>
+
+  <script>
+    // ========== API CONFIGURATION ==========
+    const API_BASE = "http://127.0.0.1:8000/api/classrooms/";
+    const TOKEN = localStorage.getItem('access_token');
+
+    // Check login on load
+    if (!TOKEN) {
+      alert("Please login to access Occupancy Tracker.");
+      window.location.href = 'login.html';
+    }
+
+    let roomsData = [];
+
+    // ========== FETCH ROOM DATA FROM API ==========
+    async function fetchRooms() {
+      try {
+        const response = await fetch(API_BASE, {
+          headers: {
+            'Authorization': `Bearer ${TOKEN}`
+          }
+        });
+        const data = await response.json();
+        
+        // Handle both paginated and plain array responses
+        roomsData = Array.isArray(data) ? data : (data.results || []);
+        
+        updateStats();
+        renderRooms(roomsData);
+      } catch (error) {
+        console.error("Failed to fetch rooms:", error);
+        showToast("Error connecting to backend.");
+      }
+    }
+
+    function updateStats() {
+      const total = roomsData.length;
+      const available = roomsData.filter(r => r.status === 'available').length;
+      const almost = roomsData.filter(r => r.status === 'almost_full').length;
+      const occupied = roomsData.filter(r => r.status === 'occupied').length;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-available').textContent = available;
+      document.getElementById('stat-almost').textContent = almost;
+      document.getElementById('stat-occupied').textContent = occupied;
+    }
+
+    // ========== RENDER ROOM CARDS ==========
+    function getStatusColor(status) {
+      if (status === 'available') return 'success';
+      if (status === 'almost_full') return 'warning';
+      return 'error';
+    }
+    function getStatusLabel(status) {
+      if (status === 'available') return 'Available';
+      if (status === 'almost_full') return 'Almost Full';
+      return 'Occupied';
+    }
+    function getStatusBorder(status) {
+      if (status === 'available') return 'status-available';
+      if (status === 'almost_full') return 'status-almost-full';
+      return 'status-occupied';
+    }
+    function getTypeIcon(type) {
+      const icons = { 
+        'classroom': 'school', 
+        'computer_lab': 'computer', 
+        'science_lab': 'science', 
+        'lecture_hall': 'groups', 
+        'library': 'local_library' 
+      };
+      return icons[type] || 'meeting_room';
+    }
+    function getTypeLabel(type) {
+      const labels = { 
+        'classroom': 'Classroom', 
+        'computer_lab': 'Computer Lab', 
+        'science_lab': 'Science Lab', 
+        'lecture_hall': 'Lecture Hall', 
+        'library': 'Library' 
+      };
+      return labels[type] || 'Room';
+    }
+
+    function renderRooms(rooms) {
+      const grid = document.getElementById('rooms-grid');
+      if (rooms.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-16"><span class="material-symbols-outlined text-5xl text-slate-300 mb-4 block">search_off</span><p class="text-on-surface-variant font-bold">No rooms match your search</p></div>`;
+        document.getElementById('visible-count').textContent = '0';
+        return;
+      }
+      document.getElementById('visible-count').textContent = rooms.length;
+      const occupancyPercent = (r) => Math.round(((r.total_seats - r.available_seats) / r.total_seats) * 100);
+
+      grid.innerHTML = rooms.map(r => `
+        <div class="room-card bg-white rounded-[2rem] p-6 border border-outline-variant shadow-sm cursor-pointer ${getStatusBorder(r.status)}" onclick="openRoomModal('${r.id}')">
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-${getStatusColor(r.status)}/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-${getStatusColor(r.status)} text-xl">${getTypeIcon(r.room_type)}</span>
+              </div>
+              <div>
+                <h3 class="text-base font-black font-headline leading-tight">${r.name}</h3>
+                <p class="text-[10px] text-on-surface-variant font-bold">${r.building} • Floor ${r.floor}</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 bg-${getStatusColor(r.status)}/10 text-${getStatusColor(r.status)} text-[9px] font-black rounded-full uppercase tracking-wider border border-${getStatusColor(r.status)}/20">${getStatusLabel(r.status)}</span>
+          </div>
+
+          <!-- Seat Bar -->
+          <div class="mb-4">
+            <div class="flex justify-between mb-1.5">
+              <span class="text-[10px] font-bold text-on-surface-variant">Seat Occupancy</span>
+              <span class="text-[10px] font-black text-${getStatusColor(r.status)}">${occupancyPercent(r)}%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-${getStatusColor(r.status)} rounded-full transition-all duration-500" style="width:${occupancyPercent(r)}%"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="text-center bg-slate-50 rounded-xl p-2">
+              <p class="text-lg font-black font-headline text-on-surface">${r.total_seats}</p>
+              <p class="text-[8px] font-bold text-on-surface-variant uppercase">Total</p>
+            </div>
+            <div class="text-center bg-success/5 rounded-xl p-2">
+              <p class="text-lg font-black font-headline text-success">${r.available_seats}</p>
+              <p class="text-[8px] font-bold text-on-surface-variant uppercase">Free</p>
+            </div>
+            <div class="text-center bg-error/5 rounded-xl p-2">
+              <p class="text-lg font-black font-headline text-error">${r.total_seats - r.available_seats}</p>
+              <p class="text-[8px] font-bold text-on-surface-variant uppercase">Used</p>
+            </div>
+          </div>
+
+          ${r.current_faculty_id ? `
+          <div class="bg-slate-50 rounded-xl p-3 mb-4">
+            <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-1">Currently Running</p>
+            <p class="text-xs font-bold text-on-surface">${r.current_subject || 'Active Session'}</p>
+            <p class="text-[10px] text-on-surface-variant font-medium">${r.current_time_slot || ''}</p>
+          </div>` : `
+          <div class="bg-success/5 rounded-xl p-3 mb-4 border border-success/10">
+            <p class="text-xs font-bold text-success flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">check_circle</span> Room is free — Book now!</p>
+          </div>`}
+
+          <button class="w-full py-3 bg-primary/5 hover:bg-primary/10 text-primary rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border border-primary/10">
+            <span class="material-symbols-outlined text-[14px]">visibility</span> View Details
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ========== FILTER LOGIC ==========
+    function filterRooms() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filter = document.getElementById('filter-select').value;
+      let filtered = roomsData.filter(r => {
+        const matchesSearch = r.name.toLowerCase().includes(query) || r.building.toLowerCase().includes(query) || (r.current_subject || "").toLowerCase().includes(query);
+        if (filter === 'all') return matchesSearch;
+        if (filter === 'available') return matchesSearch && r.status === 'available';
+        if (filter === 'occupied') return matchesSearch && r.status !== 'available';
+        if (filter === 'computer-lab') return matchesSearch && r.room_type === 'computer_lab';
+        if (filter === 'science-lab') return matchesSearch && r.room_type === 'science_lab';
+        if (filter === 'lecture-hall') return matchesSearch && r.room_type === 'lecture_hall';
+        return matchesSearch && r.room_type === filter;
+      });
+      renderRooms(filtered);
+    }
+
+    // ========== OPEN ROOM DETAIL MODAL ==========
+    function openRoomModal(id) {
+      const r = roomsData.find(room => room.id === id);
+      if (!r) return;
+      const col = getStatusColor(r.status);
+      const occupancy = Math.round(((r.total_seats - r.available_seats) / r.total_seats) * 100);
+
+      const content = document.getElementById('room-modal-content');
+      content.innerHTML = `
+        <!-- Header -->
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-3 py-1 bg-${col}/10 text-${col} text-[10px] font-black rounded-full uppercase border border-${col}/20">${getStatusLabel(r.status)}</span>
+              <span class="px-3 py-1 bg-slate-100 text-on-surface-variant text-[10px] font-black rounded-full">${getTypeLabel(r.room_type)}</span>
+              <div class="flex items-center gap-1 px-2 py-1 bg-success/10 rounded-full"><div class="w-1.5 h-1.5 bg-success rounded-full live-pulse"></div><span class="text-[9px] font-black text-success">LIVE</span></div>
+            </div>
+            <h2 class="text-3xl font-black font-headline italic text-on-surface">${r.name}</h2>
+            <p class="text-sm text-on-surface-variant font-medium mt-1">${r.building} • Floor ${r.floor}</p>
+          </div>
+          <button onclick="closeRoomModal()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center transition-all shrink-0">
+            <span class="material-symbols-outlined text-slate-600">close</span>
+          </button>
+        </div>
+
+        <!-- Live Seat Indicator -->
+        <div class="bg-${col}/5 border border-${col}/15 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-[10px] font-black text-${col} uppercase tracking-wider mb-1">Live Seats Available</p>
+            <p class="text-4xl font-black font-headline text-${col}">${r.available_seats} <span class="text-base font-bold text-on-surface-variant">/ ${r.total_seats}</span></p>
+          </div>
+          <div class="text-center">
+            <div class="relative w-16 h-16">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f5f9" stroke-width="3"/>
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="${occupancy}, 100" class="text-${col}"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-black text-${col}">${occupancy}%</span>
+            </div>
+            <p class="text-[8px] font-bold text-on-surface-variant mt-1 uppercase">Occupancy</p>
+          </div>
+        </div>
+
+        ${r.current_faculty_id ? `
+        <!-- Current Class -->
+        <div class="bg-white rounded-2xl p-5 border border-outline-variant space-y-3">
+          <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Current Class Running</p>
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary">person</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="text-base font-black text-on-surface">${r.current_subject || 'Active Session'}</h4>
+              <p class="text-xs text-on-surface-variant font-medium">Faculty Assigned</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs font-black text-primary">${r.current_time_slot || ''}</p>
+            </div>
+          </div>
+        </div>` : ''}
+
+        <!-- Upcoming Schedule -->
+        <div class="bg-white rounded-2xl p-5 border border-outline-variant">
+          <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-3">Upcoming Schedule</p>
+          <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+            <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
+            <p class="text-xs font-bold text-on-surface">${r.upcoming_info || 'No major events scheduled'}</p>
+          </div>
+        </div>
+
+        <!-- Equipment -->
+        <div class="bg-white rounded-2xl p-5 border border-outline-variant">
+          <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-3">Equipment Available</p>
+          <div class="flex flex-wrap gap-2">
+            ${(r.equipment || []).map(e => `<span class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[10px] font-bold text-on-surface-variant flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[12px]">check_circle</span>${e}</span>`).join('')}
+            ${(!r.equipment || r.equipment.length === 0) ? '<p class="text-xs text-on-surface-variant font-medium">Standard classroom equipment</p>' : ''}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="event.stopPropagation(); showToast('Booking seat in ${r.name}...')"
+            class="flex-1 min-w-[140px] py-3.5 ${r.status === 'available' ? 'bg-success text-white shadow-lg shadow-success/20' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all ${r.status === 'available' ? 'hover:scale-[1.02] active:scale-95' : ''}" ${r.status !== 'available' ? 'disabled' : ''}>
+            <span class="material-symbols-outlined text-[16px]">event_seat</span> Reserve Seat
+          </button>
+          <button onclick="event.stopPropagation(); showToast('Opening timetable for ${r.name}...')"
+            class="flex-1 min-w-[140px] py-3.5 bg-primary text-white rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[16px]">calendar_month</span> View Timetable
+          </button>
+        </div>
+      `;
+
+      // Show modal
+      const backdrop = document.getElementById('room-modal-backdrop');
+      const modal = document.getElementById('room-modal');
+      backdrop.classList.remove('hidden');
+      modal.classList.remove('hidden');
+      setTimeout(() => { backdrop.classList.add('opacity-100'); modal.classList.add('opacity-100'); }, 10);
+    }
+
+    function closeRoomModal() {
+      const backdrop = document.getElementById('room-modal-backdrop');
+      const modal = document.getElementById('room-modal');
+      backdrop.classList.remove('opacity-100');
+      modal.classList.remove('opacity-100');
+      setTimeout(() => { backdrop.classList.add('hidden'); modal.classList.add('hidden'); }, 300);
+    }
+
+    // ========== CAMPUS MAP ==========
+    function openCampusMap() {
+      const section = document.getElementById('campus-map-section');
+      section.classList.remove('hidden');
+      section.scrollIntoView({ behavior: 'smooth' });
+      renderMap();
+    }
+    function closeCampusMap() {
+      document.getElementById('campus-map-section').classList.add('hidden');
+    }
+    function renderMap() {
+      const grid = document.getElementById('map-grid');
+      grid.innerHTML = roomsData.map(r => {
+        const bg = r.status === 'available' ? 'bg-success/15 border-success/30 hover:bg-success/25' : r.status === 'almost_full' ? 'bg-warning/15 border-warning/30 hover:bg-warning/25' : 'bg-error/15 border-error/30 hover:bg-error/25';
+        const col = getStatusColor(r.status);
+        return `
+        <div onclick="openRoomModal('${r.id}')" class="map-room ${bg} border rounded-2xl p-4 text-center cursor-pointer">
+          <span class="material-symbols-outlined text-${col} text-2xl mb-1">${getTypeIcon(r.room_type)}</span>
+          <p class="text-xs font-black text-on-surface leading-tight">${r.name}</p>
+          <p class="text-[9px] text-on-surface-variant font-bold mt-0.5">${r.building}</p>
+          <p class="text-[10px] font-black text-${col} mt-1">${r.available_seats}/${r.total_seats} free</p>
+        </div>`;
+      }).join('');
+    }
+
+    // ========== UTILITIES ==========
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+      setTimeout(() => toast.classList.remove('toast-active'), 3000);
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      sidebar.classList.toggle('-translate-x-full');
+      backdrop.classList.toggle('hidden');
+      setTimeout(() => backdrop.classList.toggle('opacity-0'), 10);
+    }
+
+    // ========== INIT ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchRooms();
+      // Auto refresh every 5 seconds for "Instant Visibility"
+      setInterval(fetchRooms, 5000);
+    });
+  </script>
+</body>
+</html>

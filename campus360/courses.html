@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Digital Library | Campus 360</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#fdf8f0",
+            "surface": "#ffffff",
+            "primary": "#0f172a",
+            "secondary": "#3730a3",
+            "accent": "#4f46e5",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#475569",
+            "outline-variant": "#f1f5f9"
+          },
+          fontFamily: {
+            "headline": ["Outfit", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "serif": ["Playfair Display"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Notebook Style Styles */
+    .paper-grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fdf8f0;
+      background-image:
+        linear-gradient(rgba(96, 130, 182, 0.14) 1px, transparent 1px),
+        linear-gradient(to right, rgba(205, 72, 72, 0.2) 2px, transparent 2px);
+      background-size: 100% 28px, 100% 100%;
+      background-position: 0 0, 44px 0;
+    }
+
+    .library-card {
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .library-card:hover {
+      border-color: #0f172a;
+      transform: scale(1.02);
+      box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.1);
+    }
+
+    .learning-streak {
+      background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);
+    }
+
+    .serif-italic {
+      font-family: 'Inter', sans-serif;
+      font-style: italic;
+    }
+
+    /* Global Interaction Components */
+    #ai-sidebar {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: -40px 0 80px -20px rgba(15, 23, 42, 0.15);
+    }
+
+    #ai-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .toast-active {
+      opacity: 1 !important;
+      transform: translate(-50%, -20px) !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Pacifico', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+
+    /* ===== Classroom Overlay Styles ===== */
+    #classroom-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(0.2, 1, 0.3, 1);
+    }
+
+    #classroom-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #classroom-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #classroom-panel {
+      position: relative;
+      z-index: 1;
+      width: 94vw;
+      max-width: 960px;
+      max-height: 90vh;
+      background: #ffffff;
+      border-radius: 2.5rem;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 40px 100px -20px rgba(15, 23, 42, 0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(40px) scale(0.96);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #classroom-overlay.active #classroom-panel {
+      transform: translateY(0) scale(1);
+    }
+
+    .classroom-header {
+      position: relative;
+      padding: 2.5rem 2.5rem 2rem;
+      overflow: hidden;
+    }
+
+    .classroom-header-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .classroom-header-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+    }
+
+    .classroom-header-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--header-grad, linear-gradient(135deg, rgba(55, 48, 163, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%));
+    }
+
+    .classroom-header-content {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+    }
+
+    .classroom-close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 2;
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.25s;
+      backdrop-filter: blur(8px);
+    }
+
+    .classroom-close-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+
+    .classroom-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #f1f5f9;
+      background: #fafbfc;
+      padding: 0 2rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .classroom-tab {
+      padding: 1.25rem 1.5rem;
+      font-size: 0.85rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      font-style: italic;
+      line-height: 1.5;
+      cursor: pointer;
+      color: #475569;
+      border-bottom: 3px solid transparent;
+      transition: all 0.25s;
+      white-space: nowrap;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: visible;
+    }
+
+    .classroom-tab:hover {
+      color: #0f172a;
+      background: rgba(15, 23, 42, 0.03);
+    }
+
+    .classroom-tab.active {
+      color: var(--tab-accent, #3730a3);
+      border-bottom-color: var(--tab-accent, #3730a3);
+    }
+
+    .classroom-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem 2.5rem 2.5rem;
+    }
+
+    .classroom-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .classroom-body::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 99px;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeSlideIn 0.35s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stream-item {
+      background: #fafbfc;
+      border: 1px solid #f1f5f9;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.25s;
+    }
+
+    .stream-item:hover {
+      border-color: #e2e8f0;
+      box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.06);
+    }
+
+    .note-card,
+    .assignment-card {
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      border-radius: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.25s;
+    }
+
+    .note-card:hover,
+    .assignment-card:hover {
+      border-color: #3730a3;
+      transform: translateX(4px);
+      box-shadow: 0 4px 16px -4px rgba(55, 48, 163, 0.1);
+    }
+
+    .note-icon,
+    .assign-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .note-icon {
+      background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+      color: #3730a3;
+    }
+
+    .assign-icon {
+      background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+      color: #be185d;
+    }
+
+    .assign-icon.submitted {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #059669;
+    }
+
+    .download-btn,
+    .submit-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 800;
+      font-style: italic;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .download-btn {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .download-btn:hover {
+      background: #3730a3;
+      color: #fff;
+    }
+
+    .submit-btn {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .submit-btn:hover {
+      background: #3730a3;
+      transform: scale(1.04);
+    }
+
+    .submit-btn.done {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    .deadline-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .deadline-urgent {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .deadline-normal {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a;
+    }
+
+    .deadline-done {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+
+    .announcement-card {
+      background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+      border: 1px solid #bfdbfe;
+      border-radius: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.25s;
+    }
+
+    .announcement-card:hover {
+      box-shadow: 0 4px 16px -4px rgba(59, 130, 246, 0.12);
+    }
+
+    /* Responsive for classroom panel */
+    @media (max-width: 767px) {
+      #classroom-panel {
+        width: 100vw;
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+
+      .classroom-header {
+        padding: 1.5rem 1.25rem 1.25rem;
+      }
+
+      .classroom-body {
+        padding: 1.25rem;
+      }
+
+      .classroom-tabs {
+        padding: 0 1rem;
+      }
+
+      .classroom-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.7rem;
+      }
+
+      .note-card,
+      .assignment-card {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .note-card .flex-1,
+      .assignment-card .flex-1 {
+        width: 100%;
+      }
+
+      .note-card .download-btn,
+      .assignment-card .submit-btn,
+      .assignment-card .download-btn {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+      }
+    }
+
+    /* Responsive header */
+    @media (max-width: 639px) {
+      header h1 {
+        font-size: 2rem !important;
+      }
+
+      header .learning-streak {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-background font-body text-on-surface flex min-h-screen">
+  <div class="paper-grain"></div>
+
+  <!-- Mobile Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-slate-900/50 z-[90] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar"
+    class="h-screen w-72 fixed left-0 top-0 z-[100] bg-white border-r border-outline-variant flex flex-col p-6 space-y-2 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+    <div class="mb-10 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div
+          class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-sm font-black">menu_book</span>
+        </div>
+        <h1 class="text-xl font-black text-slate-900 font-headline italic">Campus 360</h1>
+      </div>
+      <p class="text-[10px] text-on-surface-variant font-bold">Digital Library</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="student-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>Dashboard
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 transition-all text-sm font-headline italic"
+        href="courses.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>Courses
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="timetable.html">
+        <span class="material-symbols-outlined">calendar_today</span>Timetable
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="fees.html">
+        <span class="material-symbols-outlined">payments</span>Fees
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="gymkhana.html">
+        <span class="material-symbols-outlined">sports_kabaddi</span>Gymkhana
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="canteen.html">
+        <span class="material-symbols-outlined">restaurant</span>Canteen
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="occupancy.html">
+        <span class="material-symbols-outlined">meeting_room</span>Occupancy
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="lost-found.html">
+        <span class="material-symbols-outlined">travel_explore</span>Lost & Found
+      </a>
+    </nav>
+    <div class="pt-6 border-t border-outline-variant space-y-1">
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-slate-50 rounded-full transition-all text-sm font-bold font-headline"
+        href="settings.html">
+        <span class="material-symbols-outlined">settings</span>Settings
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-red-50 hover:text-red-500 rounded-full transition-all text-sm font-bold font-headline"
+        href="login.html">
+        <span class="material-symbols-outlined">logout</span>Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div
+    class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant z-[80] flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
+        <span class="material-symbols-outlined text-sm font-black">school</span>
+      </div>
+      <span class="text-xl font-black text-slate-900 font-headline italic">Campus 360</span>
+    </div>
+    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-primary transition-colors">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+  </div>
+
+  <!-- ===== Classroom Overlay ===== -->
+  <div id="classroom-overlay">
+    <div id="classroom-backdrop" onclick="closeClassroom()"></div>
+    <div id="classroom-panel">
+      <!-- Header -->
+      <div class="classroom-header">
+        <div class="classroom-header-bg">
+          <img id="classroom-header-img" src="" alt="" />
+        </div>
+        <button class="classroom-close-btn" onclick="closeClassroom()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="classroom-header-content">
+          <p id="classroom-code" class="text-[10px] font-black italic opacity-80 mb-1"></p>
+          <h2 id="classroom-title" class="text-2xl md:text-3xl font-black font-headline italic leading-tight mb-1"></h2>
+          <p id="classroom-faculty" class="text-sm font-medium opacity-80"></p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="classroom-tabs">
+        <button class="classroom-tab active" data-tab="stream" onclick="switchTab('stream', this)">
+          <span class="material-symbols-outlined text-[20px]">forum</span> Stream
+        </button>
+        <button class="classroom-tab" data-tab="notes" onclick="switchTab('notes', this)">
+          <span class="material-symbols-outlined text-[20px]">description</span> Notes
+        </button>
+        <button class="classroom-tab" data-tab="assignments" onclick="switchTab('assignments', this)">
+          <span class="material-symbols-outlined text-[20px]">assignment</span> Assignments
+        </button>
+        <button class="classroom-tab" data-tab="announcements" onclick="switchTab('announcements', this)">
+          <span class="material-symbols-outlined text-[20px]">campaign</span> Announcements
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="classroom-body" id="classroom-body"></div>
+    </div>
+  </div>
+
+  <main
+    class="lg:ml-72 flex-1 p-4 md:p-8 space-y-6 md:space-y-10 max-w-[100vw] lg:max-w-none pt-24 md:pt-8 overflow-x-hidden">
+    <!-- Elegant Library Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span
+            class="px-2.5 py-0.5 bg-primary/5 text-primary text-[10px] font-black rounded-full italic border border-primary/10">CURRENT
+            CURRICULUM</span>
+          <span class="text-xs font-bold text-on-surface-variant italic">SY 2024 • SEMESTER 4</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black font-headline text-on-surface leading-tight italic flex items-baseline gap-4">
+          Academic <span class="serif-italic text-secondary lowercase">Resources.</span>
+        </h1>
+      </div>
+      <div class="flex gap-4">
+        <div
+          class="learning-streak text-white p-4 sm:p-6 rounded-3xl shadow-xl shadow-secondary/20 flex flex-col items-center min-w-[130px] sm:min-w-[160px]">
+          <p class="text-[10px] font-black mb-1">Study Streak</p>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-2xl sm:text-3xl">local_fire_department</span>
+            <p class="text-2xl sm:text-3xl font-black font-headline italic">12 Days</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Book Collection / All Courses -->
+    <section class="space-y-8">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1 sm:px-4">
+        <h2 class="text-2xl sm:text-3xl font-black font-headline italic leading-none">Your Curated <span
+            class="serif-italic text-secondary lowercase">Collection.</span></h2>
+        <div class="flex gap-2">
+          <button onclick="showToast('Loading metadata filters...')"
+            class="px-4 sm:px-6 py-2 bg-white border border-outline-variant rounded-full text-[10px] font-black italic hover:bg-primary hover:text-white hover:border-primary transition-all">Filter</button>
+          <button onclick="showToast('Initializing library indexing...')"
+            class="px-4 sm:px-6 py-2 bg-white border border-outline-variant rounded-full text-[10px] font-black italic hover:bg-primary hover:text-white hover:border-primary transition-all">Search
+            Library</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <!-- Course 1: Comp Eng Management -->
+        <div class="library-card rounded-[2rem] p-4 sm:p-6 space-y-4 sm:space-y-6 flex flex-col group relative overflow-hidden"
+          onclick="openClassroom('mg301')">
+          <div class="absolute inset-0 bg-blue-50/50 -z-10 group-hover:bg-blue-100/50 transition-colors"></div>
+          <div
+            class="aspect-[16/9] bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group-hover:shadow-xl transition-all">
+            <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+              src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
+              alt="Computer Eng Management" />
+            <div
+              class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-green-500"></span>
+              <span class="text-[10px] font-bold text-on-surface-variant">ACTIVE</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-black text-secondary italic">MG301 • CORE</p>
+            <h3 class="text-lg sm:text-xl font-black font-headline italic leading-tight">Computer Eng Management</h3>
+            <p class="text-xs text-on-surface-variant font-medium">Prof. Rajesh Gaikwad</p>
+          </div>
+          <div class="pt-4 border-t border-slate-200/50 flex justify-between items-center mt-auto">
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mr-4">
+              <div class="bg-primary h-full w-[85%]"></div>
+            </div>
+            <p class="text-[10px] font-black text-primary whitespace-nowrap">85%</p>
+          </div>
+        </div>
+
+        <!-- Course 2: Maths -->
+        <div class="library-card rounded-[2rem] p-4 sm:p-6 space-y-4 sm:space-y-6 flex flex-col group relative overflow-hidden"
+          onclick="openClassroom('ma202')">
+          <div class="absolute inset-0 bg-indigo-50/50 -z-10 group-hover:bg-indigo-100/50 transition-colors"></div>
+          <div
+            class="aspect-[16/9] bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group-hover:shadow-xl transition-all">
+            <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+              src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2000&auto=format&fit=crop"
+              alt="Maths" />
+            <div
+              class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-green-500"></span>
+              <span class="text-[10px] font-bold text-on-surface-variant">ACTIVE</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-black text-secondary italic">MA202 • CORE</p>
+            <h3 class="text-lg sm:text-xl font-black font-headline italic leading-tight">Discrete Maths</h3>
+            <p class="text-xs text-on-surface-variant font-medium">Prof. Monica</p>
+          </div>
+          <div class="pt-4 border-t border-slate-200/50 flex justify-between items-center mt-auto">
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mr-4">
+              <div class="bg-primary h-full w-[45%]"></div>
+            </div>
+            <p class="text-[10px] font-black text-primary whitespace-nowrap">45%</p>
+          </div>
+        </div>
+
+        <!-- Course 3: Design Thinking -->
+        <div class="library-card rounded-[2rem] p-4 sm:p-6 space-y-4 sm:space-y-6 flex flex-col group relative overflow-hidden"
+          onclick="openClassroom('hu201')">
+          <div class="absolute inset-0 bg-pink-50/50 -z-10 group-hover:bg-pink-100/50 transition-colors"></div>
+          <div
+            class="aspect-[16/9] bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group-hover:shadow-xl transition-all">
+            <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+              src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=2000&auto=format&fit=crop"
+              alt="Design Thinking" />
+            <div
+              class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span class="text-[10px] font-bold text-on-surface-variant">UPCOMING</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-black text-pink-600 italic">HU201 • ELECTIVE</p>
+            <h3 class="text-lg sm:text-xl font-black font-headline italic leading-tight">Design Thinking & Innovation</h3>
+            <p class="text-xs text-on-surface-variant font-medium">Prof. Vaishnavi</p>
+          </div>
+          <div class="pt-4 border-t border-slate-200/50 flex justify-between items-center mt-auto">
+            <button
+              class="w-full py-2 bg-white border border-pink-200 text-pink-600 rounded-xl text-xs font-bold hover:bg-pink-50 transition-colors">View
+              Syllabus</button>
+          </div>
+        </div>
+
+        <!-- Course 4: Microprocessor 8086 -->
+        <div class="library-card rounded-[2rem] p-4 sm:p-6 space-y-4 sm:space-y-6 flex flex-col group relative overflow-hidden"
+          onclick="openClassroom('ec304')">
+          <div class="absolute inset-0 bg-emerald-50/50 -z-10 group-hover:bg-emerald-100/50 transition-colors"></div>
+          <div
+            class="aspect-[16/9] bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group-hover:shadow-xl transition-all">
+            <img class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+              src="assets/microprocessor_8086.png" alt="Microprocessor 8086" />
+            <div
+              class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-green-500"></span>
+              <span class="text-[10px] font-bold text-on-surface-variant">ACTIVE</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-black text-emerald-600 italic">EC304 • LAB</p>
+            <h3 class="text-lg sm:text-xl font-black font-headline italic leading-tight">Microprocessor 8086</h3>
+            <p class="text-xs text-on-surface-variant font-medium">Prof. Nijina Johnson</p>
+          </div>
+          <div class="pt-4 border-t border-slate-200/50 flex justify-between items-center mt-auto">
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mr-4">
+              <div class="bg-emerald-500 h-full w-[12%]"></div>
+            </div>
+            <p class="text-[10px] font-black text-emerald-600 whitespace-nowrap">12%</p>
+          </div>
+        </div>
+
+        <!-- Course 5: Idea Lab -->
+        <div
+          class="library-card rounded-[2rem] p-4 sm:p-6 space-y-4 sm:space-y-6 flex flex-col group relative overflow-hidden opacity-80 hover:opacity-100 transition-all"
+          onclick="openClassroom('prj400')">
+          <div class="absolute inset-0 bg-amber-50/50 -z-10 group-hover:bg-amber-100/50 transition-colors"></div>
+          <div
+            class="aspect-[16/9] bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group-hover:shadow-xl transition-all">
+            <div
+              class="absolute inset-0 bg-slate-900/10 flex items-center justify-center z-10 transition-all group-hover:opacity-0">
+              <span class="material-symbols-outlined text-4xl text-white drop-shadow-md">lock</span>
+            </div>
+            <img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2000&auto=format&fit=crop"
+              alt="Idea Lab" />
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-black text-amber-600 italic">PRJ400 • PRACTICAL</p>
+            <h3 class="text-lg sm:text-xl font-black font-headline italic leading-tight">Integration Idea Lab</h3>
+            <p class="text-xs text-on-surface-variant font-medium">Prof. Bhusan Nemade</p>
+          </div>
+          <div class="pt-4 border-t border-slate-200/50 flex justify-between items-center mt-auto">
+            <p class="text-[10px] font-black text-amber-600">45 SEATS LEFT</p>
+            <button onclick="event.stopPropagation(); showToast('Enrollment Request Sent')"
+              class="px-5 py-2 bg-amber-500 text-white text-xs font-bold rounded-xl hover:bg-amber-600 transition-colors">Join
+              Class</button>
+          </div>
+        </div>
+
+        <!-- Add New Course -->
+        <div onclick="showToast('Opening Course Catalog...')"
+          class="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/40 hover:bg-slate-50 transition-all cursor-pointer group min-h-[250px]">
+          <div
+            class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all shadow-sm">
+            <span class="material-symbols-outlined text-3xl font-black">add</span>
+          </div>
+          <div>
+            <h4
+              class="text-lg font-black font-headline italic text-on-surface-variant group-hover:text-primary transition-all">
+              Enroll New</h4>
+            <p class="text-xs text-on-surface-variant font-medium mt-1">Browse 140+ subjects</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pending Due Actions -->
+    <section
+      class="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-outline-variant shadow-sm space-y-6 sm:space-y-10 relative overflow-hidden group">
+      <!-- Creative background elements -->
+      <div
+        class="absolute top-0 right-0 w-64 h-64 bg-blue-100/50 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000">
+      </div>
+      <div
+        class="absolute bottom-0 left-0 w-64 h-64 bg-rose-100/50 rounded-full blur-[80px] -ml-20 -mb-20 group-hover:scale-110 transition-transform duration-1000">
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative z-10">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
+            <span class="material-symbols-outlined text-2xl">assignment_late</span>
+          </div>
+          <h2 class="text-xl sm:text-3xl font-black font-headline italic leading-none text-slate-800">Pending Assessments</h2>
+        </div>
+        <p
+          class="text-xs font-black text-rose-600 italic px-4 py-2 bg-rose-50 rounded-full border border-rose-200 shadow-sm">
+          2 ACTIONS PENDING</p>
+      </div>
+
+      <div class="space-y-4 relative z-10">
+        <div
+          class="p-4 sm:p-6 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-3xl flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group/item relative overflow-hidden">
+          <div class="absolute left-0 top-0 bottom-0 w-2 bg-rose-500"></div>
+          <div class="text-center min-w-[60px] sm:min-w-[80px] pl-2">
+            <p
+              class="text-3xl sm:text-4xl font-black font-headline italic text-primary group-hover/item:scale-110 transition-transform">
+              20</p>
+            <p class="text-xs font-black text-slate-400">MAY</p>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-lg sm:text-xl font-black font-headline italic leading-tight text-slate-800">Project: Java Spring Boot
+              API</h4>
+            <p class="text-sm text-slate-500 font-medium">Advanced Java Programming • 100 Points</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-rose-500 text-sm font-bold flex items-center gap-1 group-hover/item:animate-pulse">
+              <span class="material-symbols-outlined text-[16px]">timer</span> 48H LEFT
+            </span>
+            <button onclick="showToast('Opening Project Secure Upload...')"
+              class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-primary p-3 rounded-2xl hover:bg-primary hover:text-white transition-colors shadow-sm"><span
+                class="material-symbols-outlined">cloud_upload</span></button>
+          </div>
+        </div>
+
+        <div
+          class="p-4 sm:p-6 bg-slate-50/80 backdrop-blur-md border border-slate-200 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 hover:bg-white transition-all cursor-pointer relative overflow-hidden">
+          <div class="absolute left-0 top-0 bottom-0 w-2 bg-slate-300"></div>
+          <div class="text-center min-w-[60px] sm:min-w-[80px] opacity-60 pl-2">
+            <p class="text-3xl sm:text-4xl font-black font-headline italic text-slate-400">28</p>
+            <p class="text-xs font-black text-slate-400">MAY</p>
+          </div>
+          <div class="flex-1 opacity-60">
+            <h4 class="text-lg sm:text-xl font-black font-headline italic leading-tight text-slate-600">Assignment 4: Graph
+              Traversals</h4>
+            <p class="text-sm text-slate-500 font-medium">Data Structures & Algorithms</p>
+          </div>
+          <span
+            class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-500 flex items-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined text-[16px]">lock_clock</span> Unlocks in 3 days
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Assistant FAB -->
+    <button onclick="toggleAI()"
+      class="fixed bottom-8 right-8 bg-gradient-to-br from-primary to-secondary text-white p-5 rounded-full shadow-2xl flex items-center gap-3 group hover:scale-105 active:scale-95 transition-all duration-300 z-50">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">auto_stories</span>
+      <span
+        class="font-headline font-bold text-sm max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">Library
+        AI</span>
+    </button>
+
+    <!-- AI Sidebar -->
+    <div id="ai-sidebar"
+      class="fixed top-0 right-0 h-screen w-[400px] bg-white z-[60] translate-x-full flex flex-col border-l border-outline-variant">
+      <div class="p-8 border-b border-outline-variant flex justify-between items-center bg-slate-50">
+        <div>
+          <h3 class="text-xl font-black font-headline italic text-primary">Library AI</h3>
+          <p class="text-[10px] font-black text-on-surface-variant leading-none mt-1">Knowledge Engine v3.8</p>
+        </div>
+        <button onclick="toggleAI()"
+          class="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center transition-all">
+          <span class="material-symbols-outlined text-on-surface-variant">close</span>
+        </button>
+      </div>
+      <div class="flex-1 p-8 overflow-y-auto space-y-6">
+        <div class="p-4 bg-primary/5 rounded-2xl border border-primary/10 text-primary">
+          <p class="text-xs font-medium leading-relaxed italic">"Hello Tejas! I've noted you are 68% through Advanced
+            Algorithms. I suggest reviewing Unit 4.2: Complexity Landscapes before your seminar tomorrow. Access
+            resources?"</p>
+        </div>
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-on-surface-variant px-1 italic">Knowledge Loops</p>
+          <button onclick="showToast('Synthesizing Summary for Unit 4.2...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Synthesize Unit 4.2 Summary</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">article</span>
+          </button>
+          <button onclick="showToast('Searching for related research papers...')"
+            class="w-full text-left p-4 hover:bg-slate-50 rounded-xl border border-outline-variant transition-all flex justify-between items-center group">
+            <span class="text-sm font-bold italic">Fetch Advanced Papers</span>
+            <span
+              class="material-symbols-outlined text-sm text-primary group-hover:translate-x-1 transition-transform">find_in_page</span>
+          </button>
+        </div>
+      </div>
+      <div class="p-8 border-t border-outline-variant">
+        <div class="relative">
+          <input type="text" placeholder="Consult knowledge logic..."
+            class="w-full pl-4 pr-12 py-4 bg-slate-50 border-outline-variant rounded-2xl focus:ring-primary focus:border-primary text-sm font-medium italic">
+          <button class="absolute right-3 top-1/2 -translate-y-1/2 text-primary p-2">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Component -->
+    <div id="toast"
+      class="fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-slate-900 text-white rounded-2xl shadow-2xl opacity-0 translate-y-10 transition-all duration-300 z-[100] flex items-center gap-3 pointer-events-none">
+      <span class="material-symbols-outlined text-primary">auto_stories</span>
+      <p id="toast-message" class="text-[10px] font-black italic"></p>
+    </div>
+
+  </main>
+
+  <script>
+    /* ===== Existing Functions ===== */
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      sidebar.classList.toggle('-translate-x-full');
+      backdrop.classList.toggle('hidden');
+      setTimeout(() => backdrop.classList.toggle('opacity-0'), 10);
+    }
+
+    function toggleAI() {
+      const sidebar = document.getElementById('ai-sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = message;
+      toast.classList.add('toast-active');
+      setTimeout(() => {
+        toast.classList.remove('toast-active');
+      }, 3000);
+    }
+
+    /* ===== Classroom Data (with per-subject color themes & expanded notes) ===== */
+    const classroomData = {
+      mg301: {
+        code: 'MG301 • CORE',
+        title: 'Computer Eng Management',
+        faculty: 'Prof. Rajesh Gaikwad',
+        img: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop',
+        // Soft Sky-Blue theme
+        theme: { accent: '#2563eb', accentLight: '#dbeafe', accentBorder: '#93c5fd', headerGrad: 'linear-gradient(135deg, rgba(37,99,235,0.88) 0%, rgba(15,23,42,0.92) 100%)', iconBg: 'linear-gradient(135deg,#dbeafe,#bfdbfe)', statBg: '#eff6ff', announceBg: 'linear-gradient(135deg,#eff6ff,#dbeafe)', announceBorder: '#93c5fd' },
+        notes: [
+          { name: 'Chapter 1 — Introduction to Engineering Management', date: 'Jan 10, 2025', type: 'PDF', size: '2.4 MB', unit: 'Unit 1' },
+          { name: 'Chapter 2 — Principles of Management (Fayol & Taylor)', date: 'Jan 18, 2025', type: 'PDF', size: '1.9 MB', unit: 'Unit 1' },
+          { name: 'Chapter 3 — Project Planning & PERT/CPM Networks', date: 'Feb 02, 2025', type: 'PDF', size: '3.1 MB', unit: 'Unit 2' },
+          { name: 'Chapter 4 — Gantt Charts & Resource Allocation', date: 'Feb 10, 2025', type: 'PPTX', size: '4.2 MB', unit: 'Unit 2' },
+          { name: 'Chapter 5 — Financial Management for Engineers', date: 'Feb 20, 2025', type: 'PDF', size: '1.8 MB', unit: 'Unit 3' },
+          { name: 'Chapter 6 — Accounting, Costing & Budgeting', date: 'Mar 01, 2025', type: 'PDF', size: '2.6 MB', unit: 'Unit 3' },
+          { name: 'Chapter 7 — Human Resource Management', date: 'Mar 10, 2025', type: 'PPTX', size: '5.6 MB', unit: 'Unit 4' },
+          { name: 'Chapter 8 — Leadership, Motivation & Team Building', date: 'Mar 22, 2025', type: 'PDF', size: '2.1 MB', unit: 'Unit 4' }
+        ],
+        assignments: [
+          { name: 'Case Study: Project Risk Analysis', deadline: 'Apr 15, 2025', points: 50, status: 'submitted' },
+          { name: 'PERT Chart Construction Exercise', deadline: 'Apr 28, 2025', points: 30, status: 'pending' },
+          { name: 'Financial Feasibility Report', deadline: 'May 10, 2025', points: 70, status: 'upcoming' },
+          { name: 'HRM Strategy Presentation', deadline: 'May 20, 2025', points: 40, status: 'upcoming' }
+        ],
+        announcements: [
+          { title: 'Mid-Semester Exam Rescheduled', body: 'The mid-semester exam is moved to April 22. Syllabus: Units 1-3. Bring your hall ticket and calculator.', date: 'Apr 05, 2025', icon: 'event' },
+          { title: 'Guest Lecture — Agile Project Management', body: 'Industry expert Mr. Sandeep Kulkarni from TCS will deliver a guest lecture on April 18 at 10 AM in Seminar Hall.', date: 'Apr 02, 2025', icon: 'groups' },
+          { title: 'Assignment 1 Graded', body: 'Scores for Case Study: Project Risk Analysis have been uploaded. Check your grades in the portal.', date: 'Apr 20, 2025', icon: 'grading' }
+        ]
+      },
+      ma202: {
+        code: 'MA202 • CORE',
+        title: 'Discrete Maths',
+        faculty: 'Prof. Monica',
+        img: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2000&auto=format&fit=crop',
+        // Soft Lavender / Violet theme
+        theme: { accent: '#7c3aed', accentLight: '#ede9fe', accentBorder: '#c4b5fd', headerGrad: 'linear-gradient(135deg, rgba(124,58,237,0.88) 0%, rgba(15,23,42,0.92) 100%)', iconBg: 'linear-gradient(135deg,#ede9fe,#ddd6fe)', statBg: '#f5f3ff', announceBg: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', announceBorder: '#c4b5fd' },
+        notes: [
+          { name: 'Chapter 1 — Set Theory Basics & Venn Diagrams', date: 'Jan 10, 2025', type: 'PDF', size: '1.9 MB', unit: 'Unit 1' },
+          { name: 'Chapter 2 — Propositional Logic & Truth Tables', date: 'Jan 20, 2025', type: 'PDF', size: '2.3 MB', unit: 'Unit 1' },
+          { name: 'Chapter 3 — Predicate Logic & Quantifiers', date: 'Jan 28, 2025', type: 'PDF', size: '1.7 MB', unit: 'Unit 1' },
+          { name: 'Chapter 4 — Relations: Properties & Closures', date: 'Feb 08, 2025', type: 'PDF', size: '2.2 MB', unit: 'Unit 2' },
+          { name: 'Chapter 5 — Functions: Injective, Surjective, Bijective', date: 'Feb 18, 2025', type: 'PDF', size: '1.8 MB', unit: 'Unit 2' },
+          { name: 'Chapter 6 — Graph Theory — Terminology & Types', date: 'Mar 01, 2025', type: 'PDF', size: '3.5 MB', unit: 'Unit 3' },
+          { name: 'Chapter 7 — Euler & Hamilton Paths', date: 'Mar 12, 2025', type: 'PDF', size: '2.0 MB', unit: 'Unit 3' },
+          { name: 'Chapter 8 — Trees, Spanning Trees & Applications', date: 'Mar 24, 2025', type: 'PPTX', size: '4.5 MB', unit: 'Unit 3' }
+        ],
+        assignments: [
+          { name: 'Problem Set 1: Propositional Logic', deadline: 'Mar 20, 2025', points: 25, status: 'submitted' },
+          { name: 'Problem Set 2: Relations & Functions', deadline: 'Apr 10, 2025', points: 30, status: 'submitted' },
+          { name: 'Graph Theory Exercises', deadline: 'Apr 30, 2025', points: 40, status: 'pending' },
+          { name: 'Tree Traversal Assignment', deadline: 'May 12, 2025', points: 35, status: 'upcoming' }
+        ],
+        announcements: [
+          { title: 'Extra Tutorial — Graph Theory', body: 'An extra tutorial on graph coloring and Euler paths will be held on Saturday, April 12 at 2 PM in Room 304.', date: 'Apr 07, 2025', icon: 'school' },
+          { title: 'Syllabus for End-Semester', body: 'End-semester exam will cover Units 1-3 (all chapters). Formula sheet will be provided during the exam.', date: 'Apr 15, 2025', icon: 'menu_book' }
+        ]
+      },
+      hu201: {
+        code: 'HU201 • ELECTIVE',
+        title: 'Design Thinking & Innovation',
+        faculty: 'Prof. Vaishnavi',
+        img: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=2000&auto=format&fit=crop',
+        // Soft Rose / Pink theme
+        theme: { accent: '#db2777', accentLight: '#fce7f3', accentBorder: '#f9a8d4', headerGrad: 'linear-gradient(135deg, rgba(219,39,119,0.85) 0%, rgba(15,23,42,0.92) 100%)', iconBg: 'linear-gradient(135deg,#fce7f3,#fbcfe8)', statBg: '#fdf2f8', announceBg: 'linear-gradient(135deg,#fdf2f8,#fce7f3)', announceBorder: '#f9a8d4' },
+        notes: [
+          { name: 'Module 1 — What is Design Thinking?', date: 'Jan 12, 2025', type: 'PDF', size: '2.0 MB', unit: 'Module 1' },
+          { name: 'Module 2 — Empathy & User Research Methods', date: 'Jan 25, 2025', type: 'PPTX', size: '4.8 MB', unit: 'Module 1' },
+          { name: 'Module 3 — Problem Definition & POV Statements', date: 'Feb 05, 2025', type: 'PDF', size: '1.5 MB', unit: 'Module 2' },
+          { name: 'Module 4 — Ideation Techniques (Brainstorm, SCAMPER)', date: 'Feb 18, 2025', type: 'PPTX', size: '5.2 MB', unit: 'Module 2' },
+          { name: 'Module 5 — Prototyping: Low-Fi to High-Fi', date: 'Mar 02, 2025', type: 'PDF', size: '3.1 MB', unit: 'Module 3' },
+          { name: 'Module 6 — User Testing & Iteration Cycles', date: 'Mar 15, 2025', type: 'PDF', size: '2.4 MB', unit: 'Module 3' },
+          { name: 'Case Studies — Stanford d.school Examples', date: 'Mar 28, 2025', type: 'PDF', size: '6.0 MB', unit: 'Reference' }
+        ],
+        assignments: [
+          { name: 'Empathy Map & User Persona', deadline: 'Apr 18, 2025', points: 35, status: 'pending' },
+          { name: 'POV + How-Might-We Statements', deadline: 'Apr 28, 2025', points: 25, status: 'upcoming' },
+          { name: 'Prototype Presentation', deadline: 'May 20, 2025', points: 60, status: 'upcoming' }
+        ],
+        announcements: [
+          { title: 'Design Sprint Week', body: 'Week of April 21-25 will be a design sprint. Bring laptops and sketch kits. Teams will be announced April 19.', date: 'Apr 06, 2025', icon: 'sprint' },
+          { title: 'Figma Workshop', body: 'Free Figma workshop for all students on April 16, 3 PM in Lab 201. Install Figma beforehand.', date: 'Apr 10, 2025', icon: 'design_services' }
+        ]
+      },
+      ec304: {
+        code: 'EC304 • LAB',
+        title: 'Microprocessor 8086',
+        faculty: 'Prof. Nijina Johnson',
+        img: 'assets/microprocessor_8086.png',
+        // Soft Mint / Emerald theme
+        theme: { accent: '#059669', accentLight: '#d1fae5', accentBorder: '#6ee7b7', headerGrad: 'linear-gradient(135deg, rgba(5,150,105,0.88) 0%, rgba(15,23,42,0.92) 100%)', iconBg: 'linear-gradient(135deg,#d1fae5,#a7f3d0)', statBg: '#ecfdf5', announceBg: 'linear-gradient(135deg,#ecfdf5,#d1fae5)', announceBorder: '#6ee7b7' },
+        notes: [
+          { name: 'Chapter 1 — 8086 Architecture Overview', date: 'Jan 14, 2025', type: 'PDF', size: '3.2 MB', unit: 'Unit 1' },
+          { name: 'Chapter 2 — Pin Diagram & Bus Structure', date: 'Jan 22, 2025', type: 'PDF', size: '2.1 MB', unit: 'Unit 1' },
+          { name: 'Chapter 3 — Addressing Modes of 8086', date: 'Feb 01, 2025', type: 'PDF', size: '2.7 MB', unit: 'Unit 2' },
+          { name: 'Chapter 4 — Complete Instruction Set Reference', date: 'Feb 12, 2025', type: 'PDF', size: '4.3 MB', unit: 'Unit 2' },
+          { name: 'Chapter 5 — Assembly Language Programming', date: 'Feb 22, 2025', type: 'PDF', size: '3.0 MB', unit: 'Unit 3' },
+          { name: 'Chapter 6 — Interrupt System & Vector Table', date: 'Mar 05, 2025', type: 'PDF', size: '2.5 MB', unit: 'Unit 3' },
+          { name: 'Lab Manual — Experiments 1 to 6', date: 'Feb 18, 2025', type: 'PDF', size: '1.5 MB', unit: 'Lab' },
+          { name: 'Lab Manual — Experiments 7 to 12', date: 'Mar 18, 2025', type: 'PDF', size: '1.8 MB', unit: 'Lab' }
+        ],
+        assignments: [
+          { name: 'Lab 1: Data Transfer Programs', deadline: 'Mar 15, 2025', points: 20, status: 'submitted' },
+          { name: 'Lab 2: Arithmetic Operations (ADD/SUB/MUL/DIV)', deadline: 'Apr 05, 2025', points: 20, status: 'submitted' },
+          { name: 'Lab 3: Logical & Shift Operations', deadline: 'Apr 22, 2025', points: 20, status: 'pending' },
+          { name: 'Lab 4: String Manipulation Programs', deadline: 'May 05, 2025', points: 20, status: 'upcoming' },
+          { name: 'Lab 5: Interrupt Programming', deadline: 'May 15, 2025', points: 20, status: 'upcoming' }
+        ],
+        announcements: [
+          { title: 'Lab Exam Schedule', body: 'Internal lab exam for Microprocessor 8086 will be held on May 8. Practice programs from Lab Manual Exp 1-6.', date: 'Apr 04, 2025', icon: 'quiz' },
+          { title: 'Make-up Lab Session', body: 'Students who missed Lab 1 can attend a make-up session on April 14, 2 PM - 4 PM.', date: 'Apr 01, 2025', icon: 'update' },
+          { title: 'Lab 2 Marks Released', body: 'Marks for Arithmetic Operations lab have been uploaded. Check your lab journal for feedback.', date: 'Apr 12, 2025', icon: 'grading' }
+        ]
+      },
+      prj400: {
+        code: 'PRJ400 • PRACTICAL',
+        title: 'Integration Idea Lab',
+        faculty: 'Prof. Bhusan Nemade',
+        img: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2000&auto=format&fit=crop',
+        // Soft Amber / Warm theme
+        theme: { accent: '#d97706', accentLight: '#fef3c7', accentBorder: '#fcd34d', headerGrad: 'linear-gradient(135deg, rgba(217,119,6,0.88) 0%, rgba(15,23,42,0.92) 100%)', iconBg: 'linear-gradient(135deg,#fef3c7,#fde68a)', statBg: '#fffbeb', announceBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)', announceBorder: '#fcd34d' },
+        notes: [
+          { name: 'Project Guidelines & Evaluation Rubrics', date: 'Jan 15, 2025', type: 'PDF', size: '1.2 MB', unit: 'Guidelines' },
+          { name: 'Phase 1 — Problem Identification & Literature Survey', date: 'Jan 25, 2025', type: 'PDF', size: '2.0 MB', unit: 'Phase 1' },
+          { name: 'Phase 2 — System Design & Architecture', date: 'Feb 10, 2025', type: 'PPTX', size: '3.8 MB', unit: 'Phase 2' },
+          { name: 'Phase 3 — Implementation Methodology', date: 'Feb 25, 2025', type: 'PDF', size: '2.5 MB', unit: 'Phase 3' },
+          { name: 'Reference — IoT Integration & Sensor Interfacing', date: 'Mar 05, 2025', type: 'PDF', size: '4.1 MB', unit: 'Reference' },
+          { name: 'Reference — Cloud Deployment (AWS/Firebase)', date: 'Mar 15, 2025', type: 'PDF', size: '3.3 MB', unit: 'Reference' },
+          { name: 'Template — Final Report Format (IEEE)', date: 'Mar 25, 2025', type: 'DOCX', size: '0.8 MB', unit: 'Template' }
+        ],
+        assignments: [
+          { name: 'Project Proposal Submission', deadline: 'Mar 30, 2025', points: 30, status: 'submitted' },
+          { name: 'Phase 1 Report: Literature Survey', deadline: 'Apr 15, 2025', points: 20, status: 'submitted' },
+          { name: 'Mid-Review Presentation', deadline: 'May 05, 2025', points: 50, status: 'pending' },
+          { name: 'Final Project Demo & Viva', deadline: 'May 25, 2025', points: 100, status: 'upcoming' }
+        ],
+        announcements: [
+          { title: 'Component Procurement Deadline', body: 'All teams must submit their component list by April 20. Procurement will be closed after this date.', date: 'Apr 03, 2025', icon: 'inventory_2' },
+          { title: 'Mid-Review Slot Allocation', body: 'Mid-review presentation slots have been published. Check the noticeboard for your team timeslot.', date: 'Apr 18, 2025', icon: 'event_available' }
+        ]
+      }
+    };
+
+    /* ===== Classroom Functions ===== */
+    function openClassroom(courseId) {
+      const data = classroomData[courseId];
+      if (!data) return;
+
+      const t = data.theme;
+
+      document.getElementById('classroom-code').textContent = data.code;
+      document.getElementById('classroom-title').textContent = data.title;
+      document.getElementById('classroom-faculty').textContent = data.faculty;
+      document.getElementById('classroom-header-img').src = data.img;
+      document.getElementById('classroom-header-img').alt = data.title;
+
+      // Apply subject-specific header gradient
+      const panel = document.getElementById('classroom-panel');
+      panel.style.setProperty('--header-grad', t.headerGrad);
+
+      // Apply tab accent
+      panel.style.setProperty('--tab-accent', t.accent);
+
+      // Reset to stream tab
+      document.querySelectorAll('.classroom-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.setProperty('--tab-accent', t.accent);
+      });
+      document.querySelector('.classroom-tab[data-tab="stream"]').classList.add('active');
+
+      // Store data for tabs
+      document.getElementById('classroom-overlay').dataset.courseId = courseId;
+
+      renderTab('stream', courseId);
+
+      // Show
+      const overlay = document.getElementById('classroom-overlay');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeClassroom() {
+      const overlay = document.getElementById('classroom-overlay');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.classroom-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      const courseId = document.getElementById('classroom-overlay').dataset.courseId;
+      renderTab(tabName, courseId);
+    }
+
+    function renderTab(tabName, courseId) {
+      const data = classroomData[courseId];
+      const body = document.getElementById('classroom-body');
+
+      if (tabName === 'stream') {
+        body.innerHTML = renderStream(data);
+      } else if (tabName === 'notes') {
+        body.innerHTML = renderNotes(data);
+      } else if (tabName === 'assignments') {
+        body.innerHTML = renderAssignments(data);
+      } else if (tabName === 'announcements') {
+        body.innerHTML = renderAnnouncements(data);
+      }
+    }
+
+    /* ===== Render: Stream ===== */
+    function renderStream(data) {
+      const t = data.theme;
+      let html = '';
+
+      // Welcome card with subject color
+      html += `
+        <div style="background:${t.statBg}; border:1px solid ${t.accentBorder}; border-radius:1.25rem; padding:1.5rem; margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:${t.iconBg};display:flex;align-items:center;justify-content:center;border:2px solid ${t.accentBorder};">
+              <span class="material-symbols-outlined" style="color:${t.accent};font-size:22px;">person</span>
+            </div>
+            <div>
+              <p style="font-size:0.9rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:#0f172a;">${data.faculty}</p>
+              <p style="font-size:0.65rem;color:#64748b;font-weight:600;">Course Instructor</p>
+            </div>
+          </div>
+          <p style="font-size:0.82rem;color:#334155;line-height:1.7;font-weight:500;">Welcome to <strong style="color:${t.accent};">${data.title}</strong>. Use the tabs above to browse uploaded Notes, check your Assignments, and read important Announcements from the faculty.</p>
+        </div>`;
+
+      // Latest announcement preview
+      if (data.announcements.length > 0) {
+        const a = data.announcements[0];
+        html += `
+        <div style="background:#fff; border:1px solid #f1f5f9; border-left:4px solid ${t.accent}; border-radius:1rem; padding:1.25rem; margin-bottom:1rem;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="material-symbols-outlined" style="color:${t.accent};font-size:18px;">${a.icon || 'campaign'}</span>
+            <p style="font-size:0.7rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:${t.accent};text-transform:uppercase;letter-spacing:0.04em;">Latest Announcement</p>
+            <span style="font-size:0.6rem;color:#94a3b8;font-weight:600;margin-left:auto;">${a.date}</span>
+          </div>
+          <p style="font-size:0.85rem;font-weight:700;color:#0f172a;margin-bottom:3px;">${a.title}</p>
+          <p style="font-size:0.75rem;color:#64748b;line-height:1.5;">${a.body}</p>
+        </div>`;
+      }
+
+      // Quick stats with subject color
+      const totalNotes = data.notes.length;
+      const totalAssign = data.assignments.length;
+      const submitted = data.assignments.filter(a => a.status === 'submitted').length;
+      const pending = data.assignments.filter(a => a.status === 'pending').length;
+
+      html += `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:6px;">
+          <div style="background:${t.statBg};border:1px solid ${t.accentBorder};border-radius:1rem;text-align:center;padding:1.1rem 0.75rem;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:${t.accent};">description</span>
+            <p style="font-size:1.6rem;font-weight:900;font-family:'Outfit',sans-serif;font-style:italic;color:#0f172a;margin-top:2px;">${totalNotes}</p>
+            <p style="font-size:0.62rem;font-weight:700;color:#64748b;">Notes</p>
+          </div>
+          <div style="background:${t.statBg};border:1px solid ${t.accentBorder};border-radius:1rem;text-align:center;padding:1.1rem 0.75rem;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:${t.accent};">assignment</span>
+            <p style="font-size:1.6rem;font-weight:900;font-family:'Outfit',sans-serif;font-style:italic;color:#0f172a;margin-top:2px;">${totalAssign}</p>
+            <p style="font-size:0.62rem;font-weight:700;color:#64748b;">Assignments</p>
+          </div>
+          <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:1rem;text-align:center;padding:1.1rem 0.75rem;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:#059669;">check_circle</span>
+            <p style="font-size:1.6rem;font-weight:900;font-family:'Outfit',sans-serif;font-style:italic;color:#0f172a;margin-top:2px;">${submitted}</p>
+            <p style="font-size:0.62rem;font-weight:700;color:#64748b;">Submitted</p>
+          </div>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:1rem;text-align:center;padding:1.1rem 0.75rem;">
+            <span class="material-symbols-outlined" style="font-size:24px;color:#dc2626;">pending_actions</span>
+            <p style="font-size:1.6rem;font-weight:900;font-family:'Outfit',sans-serif;font-style:italic;color:#0f172a;margin-top:2px;">${pending}</p>
+            <p style="font-size:0.62rem;font-weight:700;color:#64748b;">Pending</p>
+          </div>
+        </div>`;
+
+      return html;
+    }
+
+    /* ===== Render: Notes (grouped by unit) ===== */
+    function renderNotes(data) {
+      const t = data.theme;
+      const fileIcon = (type) => {
+        if (type === 'PPTX') return 'slideshow';
+        if (type === 'DOCX') return 'article';
+        return 'picture_as_pdf';
+      };
+
+      // Group notes by unit
+      const groups = {};
+      data.notes.forEach(n => {
+        const key = n.unit || 'General';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(n);
+      });
+
+      let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:2px 0;">
+        <span class="material-symbols-outlined" style="font-size:24px;color:${t.accent};">folder_open</span>
+        <p style="font-size:0.95rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:#334155;text-transform:uppercase;letter-spacing:0.05em;line-height:1.4;">Course Materials — ${data.notes.length} Files</p>
+      </div>`;
+
+      Object.keys(groups).forEach(unitName => {
+        // Unit header
+        html += `
+        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid ${t.accentBorder};">
+          <div style="width:28px;height:28px;border-radius:8px;background:${t.iconBg};display:flex;align-items:center;justify-content:center;">
+            <span class="material-symbols-outlined" style="font-size:16px;color:${t.accent};">folder</span>
+          </div>
+          <p style="font-size:0.72rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:${t.accent};text-transform:uppercase;letter-spacing:0.04em;">${unitName}</p>
+          <span style="font-size:0.6rem;color:#94a3b8;font-weight:600;margin-left:auto;">${groups[unitName].length} files</span>
+        </div>`;
+
+        groups[unitName].forEach(note => {
+          html += `
+          <div class="note-card" style="border-color:${t.accentBorder}20;">
+            <div style="width:42px;height:42px;border-radius:0.75rem;background:${t.iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:20px;color:${t.accent};">${fileIcon(note.type)}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <p style="font-size:0.8rem;font-weight:700;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${note.name}</p>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;">
+                <span style="font-size:0.6rem;font-weight:700;color:#fff;background:${t.accent};padding:2px 8px;border-radius:4px;">${note.type}</span>
+                <span style="font-size:0.6rem;color:#94a3b8;font-weight:600;">${note.size}</span>
+                <span style="font-size:0.6rem;color:#cbd5e1;">•</span>
+                <span style="font-size:0.6rem;color:#94a3b8;font-weight:600;">${note.date}</span>
+              </div>
+            </div>
+            <button class="download-btn" style="background:${t.accentLight};color:${t.accent};border:1px solid ${t.accentBorder};" onclick="event.stopPropagation(); showToast('Downloading: ${note.name}')">
+              <span class="material-symbols-outlined" style="font-size:16px;">download</span> Download
+            </button>
+          </div>`;
+        });
+      });
+
+      return html;
+    }
+
+    /* ===== Render: Assignments ===== */
+    function renderAssignments(data) {
+      const t = data.theme;
+
+      let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:2px 0;">
+        <span class="material-symbols-outlined" style="font-size:24px;color:${t.accent};">assignment</span>
+        <p style="font-size:0.95rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:#334155;text-transform:uppercase;letter-spacing:0.05em;line-height:1.4;">Assignments — ${data.assignments.length} Total</p>
+      </div>`;
+
+      data.assignments.forEach((a, i) => {
+        const statusIcon = a.status === 'submitted' ? 'check_circle' : a.status === 'pending' ? 'schedule' : 'lock_clock';
+        const deadlineClass = a.status === 'submitted' ? 'deadline-done' : a.status === 'pending' ? 'deadline-urgent' : 'deadline-normal';
+        const deadlineLabel = a.status === 'submitted' ? '✓ Submitted' : a.status === 'pending' ? `Due: ${a.deadline}` : `Opens: ${a.deadline}`;
+        const statusColor = a.status === 'submitted' ? '#059669' : a.status === 'pending' ? '#dc2626' : '#d97706';
+        const statusBg = a.status === 'submitted' ? '#ecfdf5' : a.status === 'pending' ? '#fef2f2' : '#fffbeb';
+        const statusBorder = a.status === 'submitted' ? '#a7f3d0' : a.status === 'pending' ? '#fecaca' : '#fde68a';
+
+        let actionBtn = '';
+        if (a.status === 'submitted') {
+          actionBtn = `<button class="submit-btn done" disabled style="background:#d1fae5;color:#059669;"><span class="material-symbols-outlined" style="font-size:14px;">check</span> Done</button>`;
+        } else if (a.status === 'pending') {
+          actionBtn = `<button class="submit-btn" style="background:${t.accent};" onclick="event.stopPropagation(); showToast('Opening submission portal for: ${a.name}')"><span class="material-symbols-outlined" style="font-size:14px;">cloud_upload</span> Submit</button>`;
+        } else {
+          actionBtn = `<button class="download-btn" disabled style="opacity:0.4;cursor:not-allowed;background:#f8fafc;"><span class="material-symbols-outlined" style="font-size:14px;">lock</span> Locked</button>`;
+        }
+
+        html += `
+        <div class="assignment-card" style="border-color:${statusBorder};background:${statusBg}08;">
+          <div style="width:42px;height:42px;border-radius:0.75rem;background:${statusBg};border:1px solid ${statusBorder};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-outlined" style="font-size:20px;color:${statusColor};">${statusIcon}</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-size:0.82rem;font-weight:700;color:#0f172a;margin-bottom:5px;">${a.name}</p>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="deadline-badge ${deadlineClass}">${deadlineLabel}</span>
+              <span style="font-size:0.6rem;font-weight:700;color:#94a3b8;background:#f8fafc;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0;">${a.points} pts</span>
+            </div>
+          </div>
+          ${actionBtn}
+        </div>`;
+      });
+
+      return html;
+    }
+
+    /* ===== Render: Announcements ===== */
+    function renderAnnouncements(data) {
+      const t = data.theme;
+
+      let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:2px 0;">
+        <span class="material-symbols-outlined" style="font-size:24px;color:${t.accent};">campaign</span>
+        <p style="font-size:0.95rem;font-weight:800;font-family:'Outfit',sans-serif;font-style:italic;color:#334155;text-transform:uppercase;letter-spacing:0.05em;line-height:1.4;">Announcements — ${data.announcements.length}</p>
+      </div>`;
+
+      if (data.announcements.length === 0) {
+        html += `
+        <div style="text-align:center;padding:3rem;color:#94a3b8;">
+          <span class="material-symbols-outlined" style="font-size:48px;">notifications_off</span>
+          <p style="font-size:0.85rem;font-weight:600;margin-top:8px;">No announcements yet</p>
+        </div>`;
+        return html;
+      }
+
+      data.announcements.forEach(a => {
+        html += `
+        <div style="background:${t.announceBg};border:1px solid ${t.announceBorder};border-radius:1.25rem;padding:1.25rem 1.5rem;margin-bottom:0.85rem;transition:all 0.25s;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:${t.iconBg};border:1.5px solid ${t.accentBorder};display:flex;align-items:center;justify-content:center;">
+              <span class="material-symbols-outlined" style="color:${t.accent};font-size:18px;">${a.icon || 'campaign'}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <p style="font-size:0.82rem;font-weight:800;color:#0f172a;font-family:'Outfit',sans-serif;font-style:italic;">${a.title}</p>
+            </div>
+            <span style="font-size:0.6rem;color:#94a3b8;font-weight:600;white-space:nowrap;background:#fff;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0;">${a.date}</span>
+          </div>
+          <p style="font-size:0.75rem;color:#475569;line-height:1.65;padding-left:46px;">${a.body}</p>
+        </div>`;
+      });
+
+      return html;
+    }
+
+    // Close classroom on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeClassroom();
+    });
+  </script>
+</body>
+
+</html>
